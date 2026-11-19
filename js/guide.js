@@ -89,5 +89,6 @@ export function eyeCard() {
 export function workingCard(r) {
   const li = (a, cls) => a.map((x) => `<li class="${cls}"><b>${esc(x.title)}</b><span>${esc(x.detail)}</span></li>`).join('');
   if (!r.strengths.length && !r.lifts.length) return '';
-  return `<div class="setcard working"><h4>What gives it impact</h4>${r.strengths.length ? `<ul class="wlist">${li(r.strengths, 'yes')}</ul>` : '<p class="srcnote">Nothing in this picture stands out yet as a strength.</p>'}${r.lifts.length ? `<h4 class="lift">To lift it</h4><ul class="wlist">${li(r.lifts, 'up')}</ul>` : ''}</div>`;
+  const pass = r.passes ? `<p class="srcnote">Two passes, like picking keepers: the technical pass (sharp, well exposed, tidy) scores ${r.passes.technical}, and the impact pass (would it stop someone scrolling?) scores ${r.passes.impact}. A picture needs both.</p>` : '';
+  return `<div class="setcard working"><h4>What gives it impact</h4>${pass}${r.strengths.length ? `<ul class="wlist">${li(r.strengths, 'yes')}</ul>` : '<p class="srcnote">Nothing in this picture stands out yet as a strength.</p>'}${r.lifts.length ? `<h4 class="lift">To lift it</h4><ul class="wlist">${li(r.lifts, 'up')}</ul>` : ''}</div>`;
 }

@@ -131,3 +131,13 @@ test('a horizon in the middle is flagged, one on a third is praised', () => {
   assert.equal(pos(0.5)?.state, 'issue');
   assert.notEqual(pos(0.667)?.state, 'issue');
 });
+
+test('lifted blacks with bright highlights are called hazy; a normal picture is not', () => {
+  const img = landscape({});
+  const hz = { w: img.w, h: img.h, data: new Uint8ClampedArray(img.data) };
+  for (let i = 0; i < hz.data.length; i += 4) for (let c = 0; c < 3; c++) hz.data[i + c] = 90 + hz.data[i + c] * 0.62;
+  assert.equal(evaluate(analyze(hz)).findings.find((f) => f.id === 'haze')?.state, 'issue');
+  const ok = evaluate(analyze(img));
+  assert.notEqual(ok.findings.find((f) => f.id === 'haze')?.state, 'issue');
+  assert.ok(ok.passes.technical > 0 && ok.passes.impact > 0);
+});
