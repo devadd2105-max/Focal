@@ -18,7 +18,7 @@
       <svg class="iris" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="3"/><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M24 3 33 19 24 24Z"/><path d="M42.2 13.5 33 29 24 24Z"/><path d="M42.2 34.5 24 24 24 42.5 Z" transform="rotate(0)"/><path d="M24 45 15 29 24 24Z"/><path d="M5.8 34.5 15 19 24 24Z"/><path d="M5.8 13.5 24 24 24 5.5Z"/></g></svg>
       <span>Focal</span>
     </a>
-    <nav class="top-nav" aria-label="Page"><a href="#how">How it works</a><a href="https://github.com/devadd2105-max/focal">Source</a></nav>
+    <nav class="top-nav" aria-label="Page"><a href="how-it-works.html">How it works</a><a href="https://github.com/devadd2105-max/focal">Source</a></nav>
   </div>
 </header>
 
@@ -113,36 +113,9 @@
       <div class="panel" id="p-tech" role="tabpanel" aria-labelledby="t-tech" tabindex="0" hidden></div>
     </div>
   </section>
-
-  <section class="how" id="how" aria-labelledby="how-h">
-    <h2 id="how-h">How Focal works</h2>
-    <details open><summary>What it measures</summary><div class="d-body">
-      <p>Focal shrinks your photo and measures it with ordinary image maths. There is no AI model and no server.</p>
-      <ul>
-        <li><b>Light.</b> A histogram, the median brightness against middle grey, and how many pixels are pure white or pure black.</li>
-        <li><b>Sharpness.</b> How steep the strongest edges are, with the noise floor taken off so grain is not mistaken for detail.</li>
-        <li><b>The subject.</b> A saliency map: areas that stand out in colour, brightness and sharpness. The biggest cluster is treated as your subject.</li>
-        <li><b>Lines.</b> A Hough transform finds long straight lines. The flattest strong one is the horizon, and lines that meet give a vanishing point.</li>
-        <li><b>Shape and colour.</b> Mirror symmetry, empty areas, repeating patterns, dominant colours and colour casts.</li>
-        <li><b>Camera settings.</b> Aperture, shutter speed, ISO and more are read from the JPEG's EXIF data, or typed in by you, then checked against what the pixels show.</li>
-      </ul>
-    </div></details>
-    <details><summary>Measured or estimated?</summary><div class="d-body">
-      <p>Every finding is labelled. <b>Measured</b> means it comes straight from the pixels, such as the histogram or horizon angle. <b>Estimate</b> means a rule of thumb that can be wrong, such as "foreground layer" or "frame within a frame". Treat estimates as prompts to look again, not verdicts.</p>
-    </div></details>
-    <details><summary>What your goal changes</summary><div class="d-body">
-      <p>Composition rules are guidelines. When you describe your goal, Focal re-weights each finding, and marks some "faults" as deliberate: crushed shadows in a silhouette, a tilt in street work, empty space in minimalism. It reads your words by matching keywords against a list of goals, so it shows which goals it matched. Technical problems such as blur or heavy noise are still reported.</p>
-    </div></details>
-    <details><summary>What Focal cannot judge</summary><div class="d-body">
-      <p>Focal cannot judge emotion, storytelling, originality, S-curves, juxtaposition or scale. A photo can score low and still be a good photograph. Use the score as a checklist, not a grade of your eye.</p>
-    </div></details>
-    <details><summary>Privacy</summary><div class="d-body">
-      <p>Your photo is decoded and analysed in this browser tab. It is never sent anywhere, and Focal keeps no copy. Closing the tab removes it. Straighten and crop work on a copy in memory, and the download is saved on your own device.</p>
-    </div></details>
-  </section>
 </main>
 
-<footer class="foot wrap"><p>Made by <a href="https://github.com/devadd2105-max">Devadarshan</a>. Open source on <a href="https://github.com/devadd2105-max/focal">GitHub</a>. Your photos are analysed in your browser and never uploaded.</p></footer>
+<footer class="foot wrap"><p>Made by <a href="https://github.com/devadd2105-max">Devadarshan</a>. Open source on <a href="https://github.com/devadd2105-max/focal">GitHub</a>. <a href="how-it-works.html">How Focal works</a>. Your photos are analysed in your browser and never uploaded.</p></footer>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>
