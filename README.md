@@ -2,7 +2,7 @@
 
 A photo coach that runs entirely in your browser. Drop in a photo and Focal checks the framing, light, sharpness, colour and camera settings, then draws what to fix right on the picture.
 
-**Live site:** https://devadd2105-max.github.io/focal/
+**Live site:** https://devadd2105-max.github.io/Focal/
 
 **Your photo never leaves the page.** It is decoded and analysed locally. There is no server, no upload and no storage.
 
