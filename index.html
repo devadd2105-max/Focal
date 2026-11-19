@@ -24,9 +24,18 @@
 
 <main id="main" class="wrap">
   <section class="hero" id="hero">
+    <div class="hero-in">
+      <div class="hero-copy">
     <h1>A photo coach that works on the picture itself.</h1>
     <p class="lead">Drop in a photo. Focal checks the framing, light, sharpness, colour and camera settings, then draws what to fix right on the photo.</p>
     <p class="priv"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 9V6.5a5 5 0 0 1 10 0V9h1v8H4V9Zm2 0h6V6.5a3 3 0 0 0-6 0Z" fill="currentColor"/></svg><span><strong>Your photo never leaves this page.</strong> It is analysed inside your browser and is not uploaded or stored.</span></p>
+      </div>
+      <button type="button" class="hero-demo" id="herodemo" aria-label="Try Focal on a sample photo: a tilted seaside">
+        <canvas id="herocv" width="720" height="480" aria-hidden="true"></canvas>
+        <span class="hd-grid" aria-hidden="true"></span>
+        <span class="hd-cap"><b>See it work</b> on a tilted seaside photo</span>
+      </button>
+    </div>
   </section>
 
   <section class="card intent" aria-labelledby="intent-h">

@@ -375,3 +375,16 @@ body.lights-out .vf { background: #000; }
 .brand { font-family: var(--serif); font-weight: 600; letter-spacing: 0; }
 .hero h1 em { font-style: italic; }
 body.has-photo .big { font-weight: 500; letter-spacing: -0.02em; }
+
+.hero-in { display: grid; gap: 28px; align-items: center; }
+.hero-demo { appearance: none; position: relative; display: block; padding: 0; border: 1px solid var(--line-2); border-radius: 14px; overflow: hidden; cursor: pointer; background: #000; color: inherit; font: inherit; text-align: left; box-shadow: 0 18px 50px #0008; transition: transform .2s, border-color .2s; }
+.hero-demo:hover { transform: translateY(-2px); border-color: var(--good); }
+.hero-demo canvas { width: 100%; height: auto; aspect-ratio: 3 / 2; }
+.hd-grid { position: absolute; inset: 0; pointer-events: none; background:
+  linear-gradient(#ffffff55,#ffffff55) 33.33% 0 / 1px 100% no-repeat, linear-gradient(#ffffff55,#ffffff55) 66.66% 0 / 1px 100% no-repeat,
+  linear-gradient(#ffffff55,#ffffff55) 0 33.33% / 100% 1px no-repeat, linear-gradient(#ffffff55,#ffffff55) 0 66.66% / 100% 1px no-repeat; }
+.hd-cap { position: absolute; left: 12px; bottom: 12px; padding: 7px 12px; border-radius: 99px; background: #05070ccc; backdrop-filter: blur(6px); font-size: .84rem; color: var(--mute); }
+.hd-cap b { color: var(--text); font-weight: 600; }
+.gi { flex: none; width: 15px; height: 15px; color: var(--mute); align-self: center; }
+@media (min-width: 900px) { .hero-in { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; } }
+body.has-photo .gi { width: 14px; height: 14px; }

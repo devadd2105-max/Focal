@@ -131,6 +131,14 @@ function renderScore() {
 }
 
 const OV_FOR = { zebra: 'zebra', focus: 'focus', horizon: 'horizon', lines: 'lines', subject: 'subject', space: 'space', grid: 'grid' };
+const ICON_PATHS = {
+  comp: '<rect x="2.5" y="2.5" width="11" height="11" rx="1"/><path d="M6.2 2.5v11M9.8 2.5v11M2.5 6.2h11M2.5 9.8h11"/>',
+  light: '<circle cx="8" cy="8" r="2.6"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/>',
+  focus: '<path d="M2.5 5.5v-3h3M10.5 2.5h3v3M13.5 10.5v3h-3M5.5 13.5h-3v-3"/><circle cx="8" cy="8" r="1.6"/>',
+  colour: '<circle cx="6" cy="6.2" r="3.4"/><circle cx="10" cy="6.2" r="3.4"/><circle cx="8" cy="9.8" r="3.4"/>',
+  impact: '<path d="M8 1.8l1.7 3.9 4.1.4-3.1 2.8.9 4.1L8 10.8l-3.6 2.2.9-4.1L2.2 6.1l4.1-.4Z"/>'
+};
+const gicon = (g) => (ICON_PATHS[g] ? `<svg class="gi" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[g]}</svg>` : '');
 function showBtn(f) { return OV_FOR[f.overlay] ? `<button type="button" class="btn ghost small" data-show="${OV_FOR[f.overlay]}">Show on photo</button>` : ''; }
 
 function renderFirst() {
@@ -146,7 +154,7 @@ function card(f) {
   const note = f.state === 'intent' ? `<p class="intent-note">Counted as deliberate for ${esc(f.intent.goal)}: ${esc(f.intent.text)}</p>` : '';
   const more = f.why || f.fix ? `<details><summary>Why and what to do</summary>${f.why ? `<p>${esc(f.why)}</p>` : ''}${f.fix ? `<p><b>Try:</b> ${esc(f.fix)}</p>` : ''}</details>` : '';
   const act = showBtn(f) ? `<div class="act">${showBtn(f)}</div>` : '';
-  return `<article class="f ${cls}"><div class="f-head"><h4>${esc(f.title)}</h4>${f.measure ? `<span class="tag">${esc(f.measure)}</span>` : ''}${conf}${st}</div><p>${esc(f.summary)}</p>${note}${more}${act}</article>`;
+  return `<article class="f ${cls}"><div class="f-head">${gicon(f.group)}<h4>${esc(f.title)}</h4>${f.measure ? `<span class="tag">${esc(f.measure)}</span>` : ''}${conf}${st}</div><p>${esc(f.summary)}</p>${note}${more}${act}</article>`;
 }
 const order = (a, b) => ({ issue: 0, intent: 1, info: 2, good: 3 }[a.state] - { issue: 0, intent: 1, info: 2, good: 3 }[b.state]) || b.effective * b.weight - a.effective * a.weight;
 const cards = (fs) => fs.length ? fs.sort(order).map(card).join('') : '';
@@ -346,4 +354,23 @@ function buildSamples() {
 }
 
 buildChips(); buildSamples(); intentChanged();
+
+/* landing demo: a real sample, run through the real checks when clicked */
+(function heroDemo() {
+  const cv = $('herocv'); if (!cv) return;
+  const s = SAMPLES[0], im = s.make(720, 480);
+  cv.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(im.data), im.w, im.h), 0, 0);
+  $('herodemo').addEventListener('click', () => {
+    const first = document.querySelector('#samples .sample'); if (!first) return;
+    first.click();
+    let n = 0;
+    const t = setInterval(() => {
+      if (!$('result').hidden || ++n > 60) {
+        clearInterval(t);
+        const b = document.querySelector('[data-ov="horizon"]');
+        if (b && b.getAttribute('aria-pressed') !== 'true') b.click();
+      }
+    }, 150);
+  });
+})();
 window.__focal = S; // handy for debugging in the console
