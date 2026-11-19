@@ -13,7 +13,7 @@ export const SITUATIONS = [
   { what: 'Interiors and real estate', mode: 'Manual or aperture priority', ap: 'f/8 to f/11', sh: 'any, on a tripod', iso: '100 to 400', note: 'Wide lens, camera level and at about waist height so verticals stay straight. Bracket exposures so the windows are not blown out.' },
   { what: 'Food', mode: 'Aperture priority', ap: 'f/2.8 to f/5.6', sh: 'any, on a tripod', iso: '100 to 400', note: 'Light from the side or behind, from a window, with a white card opposite to fill the shadows. Keep the background simple.' },
   { what: 'Underwater', mode: 'Manual', ap: 'f/8 to f/11', sh: '1/125 s', iso: '100 to 400', note: 'Red light vanishes within a metre or so, so get very close and add a strobe or a red filter. Slightly underexpose bright reds.' },
-  { what: 'Moving subject', mode: 'Shutter priority', ap: 'camera picks', sh: '1/500 to 1/2000 s or faster', iso: 'Auto', note: 'Walking people need about 1/250 s. Running or flying subjects need 1/1000 s or more.' },
+  { what: 'Moving subject', mode: 'Shutter priority', ap: 'camera picks', sh: '1/500 to 1/2000 s or faster', iso: 'Auto', note: 'Walking people need about 1/250 s. Running or flying subjects need 1/1000 s or more. Subjects moving toward or away from you tolerate a shutter about four times slower than those crossing the frame.' },
   { what: 'Silky water', mode: 'Manual', ap: 'f/11 to f/16', sh: '1/4 to 2 s', iso: '100', note: 'Needs a tripod, and often a neutral-density filter in daylight.' },
 ];
 
@@ -29,6 +29,7 @@ export const METERING = [
   ['Centre-weighted', 'Favours the middle of the frame. Handy for portraits with a steady background.'],
   ['Partial', 'Reads a larger circle in the centre. Use it when the subject is backlit.'],
   ['Spot', 'Reads one small point. Use it when the subject is much brighter or darker than the scene, such as a stage or a moon.'],
+  ['Exposure compensation', 'Meters aim for middle grey, so snow and white walls come out grey unless you add about +1 EV, and black cats or dark walls need minus. When the subject is backlit, meter off the face.'],
 ];
 
 export const WB = [
@@ -41,7 +42,7 @@ export const WB = [
 ];
 
 export const HIST = {
-  balanced: 'A well-exposed picture usually rises gently from the left, peaks in the middle and falls away to the right, with a full range of tones.',
+  balanced: 'A well-exposed picture usually rises gently from the left, peaks in the middle and falls away to the right, with a full range of tones. No single shape is ideal: it depends on the scene and the mood, and deliberate clipping such as a sun in the frame is fine.',
   under: 'Piled up on the left: the picture is too dark. Brighten it with more light, a wider aperture, a slower shutter or a higher ISO.',
   over: 'Piled up on the right: the picture is too bright. Darken it with a smaller aperture, a faster shutter or a lower ISO.',
   dull: 'A narrow hump in the middle: the picture is flat. Add contrast, use more directional light, or look for a scene with real darks and brights.',
@@ -59,6 +60,9 @@ export const EYE = [
   'Where will the eye go first, and then second? Faces, eyes, bright and warm areas pull hardest.',
   'Is there a near layer, a middle and a far one? Something close to the lens gives a wide scene an entrance.',
   'Would you call someone over to see it? Sharp and well exposed is only the entry ticket.',
+  'Is the focus on the eye, not just near it? Focusing on the centre and then recomposing misses off-centre subjects, especially up close.',
+  'Is anything the odd one out? A single different shape, colour or gesture is what people remember.',
+  'Does it still work if you flick past it for one second? Competition judges and viewers decide that fast.',
 ];
 
 export function histogramCard(h) {
