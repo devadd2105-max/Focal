@@ -12,8 +12,8 @@ const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const P3 = [[1 / 3, 1 / 3], [2 / 3, 1 / 3], [1 / 3, 2 / 3], [2 / 3, 2 / 3]], PG = [[0.382, 0.382], [0.618, 0.382], [0.382, 0.618], [0.618, 0.618]];
 const nearest = (pt, pts) => pts.map((p) => ({ p, d: dist(pt, p) })).sort((a, b) => a.d - b.d)[0];
 
-export const WEIGHTS = { exposure: 16, clipHi: 12, clipLo: 9, contrast: 8, focus: 26, noise: 12, isolationFault: 10, shake: 14, iso: 5, aperture: 4, horizon: 14, horizonPos: 4, orient: 3, verticals: 8, tangent: 6, cut: 8, placement: 10, subject: 8, small: 6, balance: 5, headroom: 6, cast: 9, saturation: 4, wbmode: 3, evcomp: 4, flash: 4, haze: 4, actionShutter: 10 };
-export const GROUP_OF = { exposure: 'light', clipHi: 'light', clipLo: 'light', contrast: 'light', evcomp: 'light', flash: 'light', haze: 'light', focus: 'focus', noise: 'focus', isolationFault: 'focus', shake: 'focus', iso: 'focus', aperture: 'focus', actionShutter: 'focus', horizon: 'comp', horizonPos: 'comp', orient: 'comp', verticals: 'comp', tangent: 'comp', cut: 'comp', placement: 'comp', subject: 'comp', small: 'comp', balance: 'comp', headroom: 'comp', cast: 'colour', saturation: 'colour', wbmode: 'colour' };
+export const WEIGHTS = { exposure: 16, clipHi: 12, clipLo: 9, contrast: 8, focus: 26, noise: 12, isolationFault: 10, shake: 14, iso: 5, aperture: 4, horizon: 14, horizonPos: 4, orient: 3, merger: 5, verticals: 8, tangent: 6, cut: 8, placement: 10, subject: 8, small: 6, balance: 5, headroom: 6, cast: 9, saturation: 4, wbmode: 3, evcomp: 4, flash: 4, haze: 4, actionShutter: 10 };
+export const GROUP_OF = { exposure: 'light', clipHi: 'light', clipLo: 'light', contrast: 'light', evcomp: 'light', flash: 'light', haze: 'light', focus: 'focus', noise: 'focus', isolationFault: 'focus', shake: 'focus', iso: 'focus', aperture: 'focus', actionShutter: 'focus', horizon: 'comp', horizonPos: 'comp', orient: 'comp', merger: 'comp', verticals: 'comp', tangent: 'comp', cut: 'comp', placement: 'comp', subject: 'comp', small: 'comp', balance: 'comp', headroom: 'comp', cast: 'colour', saturation: 'colour', wbmode: 'colour' };
 Object.assign(WEIGHTS, { distraction: 5, glare: 5, clutter: 6, blends: 7, lightCharacter: 0, metering: 0 });
 Object.assign(GROUP_OF, { distraction: 'comp', glare: 'comp', clutter: 'comp', blends: 'comp', lightCharacter: 'light', metering: 'light' });
 export const GROUP_LABEL = { light: 'Light', focus: 'Sharpness', comp: 'Composition', colour: 'Colour', impact: 'Impact' };
@@ -102,6 +102,22 @@ function baseFindings(m, settings, goalIds) {
   }
   // Orientation: a clearly tall subject in a wide frame (or the reverse) leaves dead space at the sides.
   if (s && m.size.w > m.size.h * 1.2 && (s.y1 - s.y0) * m.size.h > 1.8 * (s.x1 - s.x0) * m.size.w && s.area < 0.35) add({ id: 'orient', state: 'info', title: 'Tall subject in a wide frame', confidence: 'estimated', severity: 0.15, measure: `${pct(s.x1 - s.x0)} wide, ${pct(s.y1 - s.y0)} tall`, summary: 'The subject is much taller than wide but the frame is horizontal.', why: 'Matching the frame to the subject cuts dead space at the sides and makes the subject bigger.', fix: 'Turn the camera upright, or crop to a vertical.' });
+  // Mergers: a long line that runs behind the top of the subject, or straight up through its middle, seems to grow out of it.
+  if (s && s.area < 0.3) {
+    const sw = s.x1 - s.x0, sh = s.y1 - s.y0, cx = (s.x0 + s.x1) / 2, found = [];
+    for (const l of m.lines.list) {
+      const dx = l.x1 - l.x0, dy = l.y1 - l.y0, hor = Math.abs(l.angle) <= 12, ver = Math.abs(l.angle) >= 78;
+      if (l.len < 0.35) continue;
+      if (hor && Math.abs(dx) > 0.02) {
+        const yAt = l.y0 + ((cx - l.x0) / dx) * dy, lo = Math.min(l.x0, l.x1), hi = Math.max(l.x0, l.x1);
+        if (lo < s.x0 - 0.04 && hi > s.x1 + 0.04 && yAt > s.y0 - 0.01 && yAt < s.y0 + 0.2 * sh) found.push('a horizontal line behind the top of the subject');
+      } else if (ver && Math.abs(dy) > 0.02) {
+        const cy = (s.y0 + s.y1) / 2, xAt = l.x0 + ((cy - l.y0) / dy) * dx, lo = Math.min(l.y0, l.y1), hi = Math.max(l.y0, l.y1);
+        if (Math.abs(xAt - cx) < 0.18 * sw && lo < s.y0 - 0.02 && hi > s.y1 + 0.02) found.push('a vertical line running through the subject');
+      }
+    }
+    if (found.length) add({ id: 'merger', title: 'A line merges with the subject', confidence: 'estimated', severity: 0.3, measure: found[0], summary: `There is ${found[0]}, so it can look as if it grows out of the subject.`, why: 'A pole through a head or a horizon across the top of it flattens the picture and confuses what belongs to what.', fix: 'Take a step sideways, or raise or lower the camera, until the line passes clear of the subject.', overlay: 'lines' });
+  }
   const vt = m.lines.verticalTilt;
   if (vt != null && m.lines.verticalCount >= 3 && Math.abs(vt) > 1.2 && Math.abs(vt) < 15) add({ id: 'verticals', title: 'Leaning verticals', confidence: 'estimated', severity: clamp(0.2 + (Math.abs(vt) - 1.2) / 8, 0, 0.6), measure: `${f1(Math.abs(vt))}° lean`, summary: 'Vertical lines such as walls and poles lean.', why: 'Tilting the camera up makes buildings fall backwards.', fix: 'Keep the camera level and stand further back, or correct perspective when editing.', overlay: 'lines' });
   if (m.lines.tangents.length) { const t = m.lines.tangents[0]; add({ id: 'tangent', title: 'Line hugs the frame edge', confidence: 'estimated', severity: 0.35, measure: `a line runs along the ${t.side} edge`, summary: 'A strong line runs almost along the edge of the frame.', why: 'Lines that almost touch the edge draw the eye to the border and look like a near miss.', fix: `Reframe so the line sits clearly inside the frame or leaves it completely at the ${t.side}.`, overlay: 'lines' }); }

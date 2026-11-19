@@ -141,3 +141,19 @@ test('lifted blacks with bright highlights are called hazy; a normal picture is 
   assert.notEqual(ok.findings.find((f) => f.id === 'haze')?.state, 'issue');
   assert.ok(ok.passes.technical > 0 && ok.passes.impact > 0);
 });
+
+test('a line running behind or through the subject is flagged as a merger', () => {
+  const mk = (line) => {
+    const w = 480, h = 320, d = new Uint8ClampedArray(w * h * 4);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4; let v = 150 + ((x * 7 + y * 3) % 9);
+      if (line === 'h' && Math.abs(y - 120) < 3) v = 30;
+      if (line === 'v' && Math.abs(x - 240) < 3) v = 30;
+      const dx = (x - 240) / 45, dy = (y - 170) / 70; if (dx * dx + dy * dy < 1) v = 200 + (x % 5) * 3;
+      d[i] = v; d[i + 1] = v * 0.8; d[i + 2] = v * 0.6; d[i + 3] = 255;
+    }
+    return { w, h, data: d };
+  };
+  const st = (l) => evaluate(analyze(mk(l))).findings.find((f) => f.id === 'merger')?.state;
+  assert.equal(st('h'), 'issue'); assert.equal(st('v'), 'issue'); assert.equal(st(null), undefined);
+});
