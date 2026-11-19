@@ -125,3 +125,9 @@ test('three separated elements are read as a triangle', () => {
   const tri = render(320, 240, (u, v) => ([[0.25, 0.75], [0.75, 0.75], [0.5, 0.25]].some(([x, y]) => dot(u, v, x, y, 0.07)) ? [235, 200, 60] : [40, 50, 70]));
   assert.ok(evaluate(analyze(tri)).techniques.find((t) => t.id === 'triangles').used);
 });
+
+test('a horizon in the middle is flagged, one on a third is praised', () => {
+  const pos = (h) => evaluate(analyze(landscape({ horizon: h }))).findings.find((f) => f.id === 'horizonPos');
+  assert.equal(pos(0.5)?.state, 'issue');
+  assert.notEqual(pos(0.667)?.state, 'issue');
+});

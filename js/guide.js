@@ -53,6 +53,9 @@ export const EYE = [
   'Where does the light come from, and what does it reveal? Look at the shadows.',
   'What is at the edges? Scan all four sides for bright or busy distractions.',
   'Is there a moment to wait for? A gesture, a step, a bird lifting off, a change in the light.',
+  'Where will the eye go first, and then second? Faces, eyes, bright and warm areas pull hardest.',
+  'Is there a near layer, a middle and a far one? Something close to the lens gives a wide scene an entrance.',
+  'Would you call someone over to see it? Sharp and well exposed is only the entry ticket.',
 ];
 
 export function histogramCard(h) {

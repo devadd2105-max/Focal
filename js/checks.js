@@ -12,8 +12,8 @@ const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const P3 = [[1 / 3, 1 / 3], [2 / 3, 1 / 3], [1 / 3, 2 / 3], [2 / 3, 2 / 3]], PG = [[0.382, 0.382], [0.618, 0.382], [0.382, 0.618], [0.618, 0.618]];
 const nearest = (pt, pts) => pts.map((p) => ({ p, d: dist(pt, p) })).sort((a, b) => a.d - b.d)[0];
 
-export const WEIGHTS = { exposure: 16, clipHi: 12, clipLo: 9, contrast: 8, focus: 26, noise: 12, isolationFault: 10, shake: 14, iso: 5, aperture: 4, horizon: 14, verticals: 8, tangent: 6, cut: 8, placement: 10, subject: 8, small: 6, balance: 5, headroom: 6, cast: 9, saturation: 4, wbmode: 3, evcomp: 4, flash: 4, actionShutter: 10 };
-export const GROUP_OF = { exposure: 'light', clipHi: 'light', clipLo: 'light', contrast: 'light', evcomp: 'light', flash: 'light', focus: 'focus', noise: 'focus', isolationFault: 'focus', shake: 'focus', iso: 'focus', aperture: 'focus', actionShutter: 'focus', horizon: 'comp', verticals: 'comp', tangent: 'comp', cut: 'comp', placement: 'comp', subject: 'comp', small: 'comp', balance: 'comp', headroom: 'comp', cast: 'colour', saturation: 'colour', wbmode: 'colour' };
+export const WEIGHTS = { exposure: 16, clipHi: 12, clipLo: 9, contrast: 8, focus: 26, noise: 12, isolationFault: 10, shake: 14, iso: 5, aperture: 4, horizon: 14, horizonPos: 4, orient: 3, verticals: 8, tangent: 6, cut: 8, placement: 10, subject: 8, small: 6, balance: 5, headroom: 6, cast: 9, saturation: 4, wbmode: 3, evcomp: 4, flash: 4, actionShutter: 10 };
+export const GROUP_OF = { exposure: 'light', clipHi: 'light', clipLo: 'light', contrast: 'light', evcomp: 'light', flash: 'light', focus: 'focus', noise: 'focus', isolationFault: 'focus', shake: 'focus', iso: 'focus', aperture: 'focus', actionShutter: 'focus', horizon: 'comp', horizonPos: 'comp', orient: 'comp', verticals: 'comp', tangent: 'comp', cut: 'comp', placement: 'comp', subject: 'comp', small: 'comp', balance: 'comp', headroom: 'comp', cast: 'colour', saturation: 'colour', wbmode: 'colour' };
 Object.assign(WEIGHTS, { distraction: 5, glare: 5, clutter: 6, blends: 7, lightCharacter: 0, metering: 0 });
 Object.assign(GROUP_OF, { distraction: 'comp', glare: 'comp', clutter: 'comp', blends: 'comp', lightCharacter: 'light', metering: 'light' });
 export const GROUP_LABEL = { light: 'Light', focus: 'Sharpness', comp: 'Composition', colour: 'Colour', impact: 'Impact' };
@@ -54,7 +54,7 @@ export const TECH = {
   harmony: { label: 'Colour harmony', group: 'Light and colour', how: 'Complementary colours (opposites on the colour wheel) pop; neighbours feel calm.' },
   monochrome: { label: 'Monochrome', group: 'Light and colour', how: 'Remove colour so shape, light and texture carry the picture.' },
 };
-export const NOT_MEASURED = ['S-curves', 'Juxtaposition', 'Scale and context', 'Emotion and story', 'Originality'];
+export const NOT_MEASURED = ['The decisive moment', 'Emotion and story', 'Juxtaposition', 'Scale and context', 'Eye contact and gaze', 'Originality'];
 
 /* ----------------------------------------------------------- findings */
 function baseFindings(m, settings, goalIds) {
@@ -92,6 +92,14 @@ function baseFindings(m, settings, goalIds) {
     else if (a <= 8) add({ id: 'horizon', title: 'Tilted horizon', severity: clamp(0.2 + (a - 0.6) / 9, 0, 0.85), measure: `${f1(a)}° ${dir}`, summary: `The strongest horizontal line leans ${f1(a)}° ${dir}.`, why: 'A slight tilt reads as a mistake because the eye expects horizons to be level.', fix: `Rotate it ${f1(a)}° ${t > 0 ? 'anticlockwise' : 'clockwise'}. The Straighten button does it and crops the edges.`, overlay: 'horizon', rotate: -t });
     else if (a <= 35) add({ id: 'horizon', title: 'Strongly tilted line', confidence: 'estimated', severity: 0.5, measure: `${f1(a)}° ${dir}`, summary: `A strong line leans ${f1(a)}°. If you tilted on purpose, that is a Dutch angle.`, why: 'A tilt this big either looks like an accident or like a deliberate style.', fix: 'If it is accidental, straighten it. If you want tension, exaggerate it so it clearly looks intentional.', overlay: 'horizon', rotate: -t });
   }
+  // Horizon height: a dead-middle horizon splits the frame; a third gives one half the lead role.
+  if (hz && !hz.converging && Math.abs(hz.angle) <= 8 && hz.len >= 0.6) {
+    const yc = (hz.y0 + hz.y1) / 2, nearThird = Math.min(Math.abs(yc - 1 / 3), Math.abs(yc - 2 / 3));
+    if (yc > 0.43 && yc < 0.57 && (m.symmetry?.tb ?? 0) < 0.6 && (m.symmetry?.lr ?? 0) < 0.8) add({ id: 'horizonPos', title: 'Horizon splits the frame', confidence: 'estimated', severity: 0.3, measure: `${pct(yc)} down`, summary: 'The horizon sits close to the middle, so sky and ground compete for equal attention.', why: 'A horizon on a third lets one half lead. A low horizon shows off the sky and makes the ground subject feel larger; a high one gives the foreground room.', fix: 'Tilt the camera so the horizon lands on the upper or lower third line. Keep it central only for a mirror-like reflection or a symmetrical scene.', overlay: 'horizon' });
+    else if (nearThird < 0.05) add({ id: 'horizonPos', state: 'good', title: 'Horizon on a third', measure: `${pct(yc)} down`, summary: 'The horizon sits on a thirds line, which gives the frame a lead half.', overlay: 'horizon' });
+  }
+  // Orientation: a clearly tall subject in a wide frame (or the reverse) leaves dead space at the sides.
+  if (s && m.size.w > m.size.h * 1.2 && (s.y1 - s.y0) * m.size.h > 1.8 * (s.x1 - s.x0) * m.size.w && s.area < 0.35) add({ id: 'orient', state: 'info', title: 'Tall subject in a wide frame', confidence: 'estimated', severity: 0.15, measure: `${pct(s.x1 - s.x0)} wide, ${pct(s.y1 - s.y0)} tall`, summary: 'The subject is much taller than wide but the frame is horizontal.', why: 'Matching the frame to the subject cuts dead space at the sides and makes the subject bigger.', fix: 'Turn the camera upright, or crop to a vertical.' });
   const vt = m.lines.verticalTilt;
   if (vt != null && m.lines.verticalCount >= 3 && Math.abs(vt) > 1.2 && Math.abs(vt) < 15) add({ id: 'verticals', title: 'Leaning verticals', confidence: 'estimated', severity: clamp(0.2 + (Math.abs(vt) - 1.2) / 8, 0, 0.6), measure: `${f1(Math.abs(vt))}° lean`, summary: 'Vertical lines such as walls and poles lean.', why: 'Tilting the camera up makes buildings fall backwards.', fix: 'Keep the camera level and stand further back, or correct perspective when editing.', overlay: 'lines' });
   if (m.lines.tangents.length) { const t = m.lines.tangents[0]; add({ id: 'tangent', title: 'Line hugs the frame edge', confidence: 'estimated', severity: 0.35, measure: `a line runs along the ${t.side} edge`, summary: 'A strong line runs almost along the edge of the frame.', why: 'Lines that almost touch the edge draw the eye to the border and look like a near miss.', fix: `Reframe so the line sits clearly inside the frame or leaves it completely at the ${t.side}.`, overlay: 'lines' }); }
