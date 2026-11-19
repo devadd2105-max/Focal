@@ -99,7 +99,7 @@ async function analyseCurrent(token, fresh) {
   S.m = analyze(rgbaOf(S.cur.canvas));
   S.assets = {};
   if (fresh) for (const k of ['subject', 'lines', 'horizon', 'focus', 'zebra', 'space']) S.ov[k] = false;
-  busy(false); $('result').hidden = false;
+  busy(false); $('result').hidden = false; enterWorkspace();
   refresh(true);
   if (fresh) $('result').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 }
@@ -265,6 +265,27 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-show]'); if (!b) return;
   const k = b.dataset.show; if (k === 'grid') S.ov.grid = 'thirds'; else S.ov[k] = true;
   syncTools(); redraw(); $('frame').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+});
+
+function enterWorkspace() {
+  document.body.classList.add('has-photo');
+  const intent = document.querySelector('section.intent'), rep = document.querySelector('.report');
+  if (intent && rep && !intent.dataset.moved) {
+    const d = document.createElement('details'); d.className = 'goalbox'; d.open = false;
+    d.innerHTML = '<summary>Your goal</summary>'; intent.dataset.moved = '1'; d.append(intent); rep.append(d);
+    rep.insertBefore(d, rep.querySelector('.tabs'));
+  }
+}
+// Keyboard shortcuts, in the spirit of photo editors: G grid, J clipping, O subject, H horizon, F focus, E empty space, L lights out.
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey || !S.m) return;
+  const t = e.target; if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+  const k = e.key.toLowerCase(), map = { j: 'zebra', o: 'subject', h: 'horizon', f: 'focus', e: 'space', n: 'lines' };
+  if (k === 'g') { const o = ['off', 'thirds', 'golden', 'diagonal']; const opts = [...$('gridsel').options].map((x) => x.value); const i = opts.indexOf(S.ov.grid); S.ov.grid = opts[(i + 1) % opts.length]; }
+  else if (k === 'l') { document.body.classList.toggle('lights-out'); return; }
+  else if (map[k]) { const b = document.querySelector(`[data-ov="${map[k]}"]`); if (b && b.disabled) return; S.ov[map[k]] = !S.ov[map[k]]; }
+  else return;
+  syncTools(); redraw();
 });
 
 function redraw() {

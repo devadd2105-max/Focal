@@ -64,14 +64,14 @@
       <div class="vbar">
         <div class="vtools" role="group" aria-label="Overlays on the photo">
           <label class="sel"><span>Grid</span><select id="gridsel"><option value="off">Off</option><option value="thirds">Thirds</option><option value="golden">Golden ratio</option><option value="diagonals">Diagonals</option><option value="axis">Centre line</option></select></label>
-          <button type="button" class="tgl" data-ov="subject" aria-pressed="false">Subject</button>
-          <button type="button" class="tgl" data-ov="lines" aria-pressed="false">Lines</button>
-          <button type="button" class="tgl" data-ov="horizon" aria-pressed="false">Horizon</button>
-          <button type="button" class="tgl" data-ov="focus" aria-pressed="false">Focus</button>
-          <button type="button" class="tgl" data-ov="zebra" aria-pressed="false">Clipping</button>
-          <button type="button" class="tgl" data-ov="space" aria-pressed="false">Empty space</button>
+          <button type="button" class="tgl" data-ov="subject" aria-pressed="false" title="Subject (O)">Subject</button>
+          <button type="button" class="tgl" data-ov="lines" aria-pressed="false" title="Lines (N)">Lines</button>
+          <button type="button" class="tgl" data-ov="horizon" aria-pressed="false" title="Horizon (H)">Horizon</button>
+          <button type="button" class="tgl" data-ov="focus" aria-pressed="false" title="Focus (F)">Focus</button>
+          <button type="button" class="tgl" data-ov="zebra" aria-pressed="false" title="Clipping (J)">Clipping</button>
+          <button type="button" class="tgl" data-ov="space" aria-pressed="false" title="Empty space (E)">Empty space</button>
         </div>
-        <div class="vact">
+        <div class="vact"><span class="keys" aria-hidden="true">G grid · J clipping · L lights out</span>
           <button type="button" class="btn ghost" id="straighten" hidden>Straighten</button>
           <button type="button" class="btn ghost" id="restore" hidden>Back to original</button>
           <label class="btn ghost" for="file">New photo</label>

@@ -39,3 +39,7 @@ Plain ES modules. `js/analyze.js` measures a photo, `js/geometry.js` finds lines
 ## Licence
 
 MIT. See `LICENSE`.
+
+## Editor layout
+
+Once a photo is open, Focal switches to a photo-editor style workspace on wide screens: a dark stage for the picture, a tool strip and histogram beneath it, and a side panel with slider-style scores. Shortcuts: G cycles the grid, J shows clipping, O subject, H horizon, F focus, E empty space, N lines, L lights out. On phones the page stays stacked.
