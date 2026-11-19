@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Focal: a photo coach that runs in your browser</title>
+<meta name="description" content="Drop in a photo and Focal checks framing, light, sharpness, colour and camera settings, then shows what to fix right on the picture. Nothing is uploaded.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="./" aria-label="Focal home">
+      <svg class="iris" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="3"/><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M24 3 33 19 24 24Z"/><path d="M42.2 13.5 33 29 24 24Z"/><path d="M42.2 34.5 24 24 24 42.5 Z" transform="rotate(0)"/><path d="M24 45 15 29 24 24Z"/><path d="M5.8 34.5 15 19 24 24Z"/><path d="M5.8 13.5 24 24 24 5.5Z"/></g></svg>
+      <span>Focal</span>
+    </a>
+    <nav class="top-nav" aria-label="Page"><a href="#how">How it works</a><a href="https://github.com/devadd2105-max/focal">Source</a></nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <section class="hero" id="hero">
+    <h1>A photo coach that works on the picture itself.</h1>
+    <p class="lead">Drop in a photo. Focal checks the framing, light, sharpness, colour and camera settings, then draws what to fix right on the photo.</p>
+    <p class="priv"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 9V6.5a5 5 0 0 1 10 0V9h1v8H4V9Zm2 0h6V6.5a3 3 0 0 0-6 0Z" fill="currentColor"/></svg><span><strong>Your photo never leaves this page.</strong> It is analysed inside your browser and is not uploaded or stored.</span></p>
+  </section>
+
+  <section class="card intent" aria-labelledby="intent-h">
+    <div class="intent-text">
+      <label id="intent-h" for="intent">What are you trying to achieve? <span class="opt">optional</span></label>
+      <p class="hint">Say what the photo is for. Focal then judges it against your goal, so a deliberate dark silhouette is not marked as a mistake.</p>
+      <textarea id="intent" rows="2" maxlength="240" placeholder="For example: a moody silhouette at sunset, or a clean product shot for Instagram" spellcheck="true"></textarea>
+      <p class="read" id="read" role="status" aria-live="polite"></p>
+    </div>
+    <div class="intent-chips">
+      <p class="chips-l" id="chips-l">Or pick one or more</p>
+      <div class="chips" id="chips" role="group" aria-labelledby="chips-l"></div>
+    </div>
+  </section>
+
+  <section id="empty" class="empty" aria-labelledby="drop-h">
+    <label class="drop" id="drop" for="file">
+      <span class="drop-art" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></span>
+      <span class="drop-t" id="drop-h">Drop a photo here</span>
+      <span class="drop-s">or <u>choose a file</u>. You can also paste one with Ctrl+V.</span>
+      <span class="drop-f">JPEG or PNG works best. Camera settings are read from JPEG files that still carry them.</span>
+    </label>
+    <input id="file" class="visually-hidden" type="file" accept="image/*">
+    <div class="samples">
+      <p class="samples-l">No photo handy? Try a sample.</p>
+      <div class="sample-row" id="samples"></div>
+    </div>
+  </section>
+
+  <p class="notice" id="notice" role="alert" hidden></p>
+  <div class="busy" id="busy" hidden role="status"><span class="spin" aria-hidden="true"></span><span>Reading your photo…</span></div>
+
+  <section id="result" class="result" hidden aria-label="Your photo and its report">
+    <div class="viewer">
+      <div class="vbar">
+        <div class="vtools" role="group" aria-label="Overlays on the photo">
+          <label class="sel"><span>Grid</span><select id="gridsel"><option value="off">Off</option><option value="thirds">Thirds</option><option value="golden">Golden ratio</option><option value="diagonals">Diagonals</option><option value="axis">Centre line</option></select></label>
+          <button type="button" class="tgl" data-ov="subject" aria-pressed="false">Subject</button>
+          <button type="button" class="tgl" data-ov="lines" aria-pressed="false">Lines</button>
+          <button type="button" class="tgl" data-ov="horizon" aria-pressed="false">Horizon</button>
+          <button type="button" class="tgl" data-ov="focus" aria-pressed="false">Focus</button>
+          <button type="button" class="tgl" data-ov="zebra" aria-pressed="false">Clipping</button>
+          <button type="button" class="tgl" data-ov="space" aria-pressed="false">Empty space</button>
+        </div>
+        <div class="vact">
+          <button type="button" class="btn ghost" id="straighten" hidden>Straighten</button>
+          <button type="button" class="btn ghost" id="restore" hidden>Back to original</button>
+          <label class="btn ghost" for="file">New photo</label>
+        </div>
+      </div>
+      <div class="vf">
+        <i class="br tl"></i><i class="br tr"></i><i class="br bl"></i><i class="br brr"></i>
+        <div class="frame" id="frame"><img id="photo" alt="Your photo, with the coach's overlays drawn over it" decoding="async"><canvas id="overlay" aria-hidden="true"></canvas></div>
+      </div>
+      <div class="readout" aria-label="Camera settings and histogram">
+        <dl class="lcd" id="lcd"></dl>
+        <canvas id="hist" width="240" height="72" aria-label="Brightness histogram" role="img"></canvas>
+      </div>
+    </div>
+
+    <div class="report">
+      <div class="card score" id="score" aria-live="polite">
+        <div class="score-main"><div class="big" id="big">–</div><div class="big-l">out of 100<br><span id="verdict">&nbsp;</span></div></div>
+        <div class="bars" id="bars"></div>
+        <p class="goalline" id="goalline" hidden></p>
+      </div>
+      <div class="card first" id="first"></div>
+
+      <div class="tabs" role="tablist" aria-label="Report sections" id="tabs">
+        <button role="tab" id="t-overview" aria-controls="p-overview" aria-selected="true">Overview</button>
+        <button role="tab" id="t-comp" aria-controls="p-comp" aria-selected="false" tabindex="-1">Composition</button>
+        <button role="tab" id="t-light" aria-controls="p-light" aria-selected="false" tabindex="-1">Light and colour</button>
+        <button role="tab" id="t-focus" aria-controls="p-focus" aria-selected="false" tabindex="-1">Sharpness</button>
+        <button role="tab" id="t-set" aria-controls="p-set" aria-selected="false" tabindex="-1">Camera settings</button>
+        <button role="tab" id="t-crops" aria-controls="p-crops" aria-selected="false" tabindex="-1">Crops</button>
+        <button role="tab" id="t-tech" aria-controls="p-tech" aria-selected="false" tabindex="-1">All techniques</button>
+      </div>
+      <div class="panel" id="p-overview" role="tabpanel" aria-labelledby="t-overview" tabindex="0"></div>
+      <div class="panel" id="p-comp" role="tabpanel" aria-labelledby="t-comp" tabindex="0" hidden></div>
+      <div class="panel" id="p-light" role="tabpanel" aria-labelledby="t-light" tabindex="0" hidden></div>
+      <div class="panel" id="p-focus" role="tabpanel" aria-labelledby="t-focus" tabindex="0" hidden></div>
+      <div class="panel" id="p-set" role="tabpanel" aria-labelledby="t-set" tabindex="0" hidden></div>
+      <div class="panel" id="p-crops" role="tabpanel" aria-labelledby="t-crops" tabindex="0" hidden></div>
+      <div class="panel" id="p-tech" role="tabpanel" aria-labelledby="t-tech" tabindex="0" hidden></div>
+    </div>
+  </section>
+
+  <section class="how" id="how" aria-labelledby="how-h">
+    <h2 id="how-h">How Focal works</h2>
+    <details open><summary>What it measures</summary><div class="d-body">
+      <p>Focal shrinks your photo and measures it with ordinary image maths. There is no AI model and no server.</p>
+      <ul>
+        <li><b>Light.</b> A histogram, the median brightness against middle grey, and how many pixels are pure white or pure black.</li>
+        <li><b>Sharpness.</b> How steep the strongest edges are, with the noise floor taken off so grain is not mistaken for detail.</li>
+        <li><b>The subject.</b> A saliency map: areas that stand out in colour, brightness and sharpness. The biggest cluster is treated as your subject.</li>
+        <li><b>Lines.</b> A Hough transform finds long straight lines. The flattest strong one is the horizon, and lines that meet give a vanishing point.</li>
+        <li><b>Shape and colour.</b> Mirror symmetry, empty areas, repeating patterns, dominant colours and colour casts.</li>
+        <li><b>Camera settings.</b> Aperture, shutter speed, ISO and more are read from the JPEG's EXIF data, or typed in by you, then checked against what the pixels show.</li>
+      </ul>
+    </div></details>
+    <details><summary>Measured or estimated?</summary><div class="d-body">
+      <p>Every finding is labelled. <b>Measured</b> means it comes straight from the pixels, such as the histogram or horizon angle. <b>Estimate</b> means a rule of thumb that can be wrong, such as "foreground layer" or "frame within a frame". Treat estimates as prompts to look again, not verdicts.</p>
+    </div></details>
+    <details><summary>What your goal changes</summary><div class="d-body">
+      <p>Composition rules are guidelines. When you describe your goal, Focal re-weights each finding, and marks some "faults" as deliberate: crushed shadows in a silhouette, a tilt in street work, empty space in minimalism. It reads your words by matching keywords against a list of goals, so it shows which goals it matched. Technical problems such as blur or heavy noise are still reported.</p>
+    </div></details>
+    <details><summary>What Focal cannot judge</summary><div class="d-body">
+      <p>Focal cannot judge emotion, storytelling, originality, S-curves, juxtaposition or scale. A photo can score low and still be a good photograph. Use the score as a checklist, not a grade of your eye.</p>
+    </div></details>
+    <details><summary>Privacy</summary><div class="d-body">
+      <p>Your photo is decoded and analysed in this browser tab. It is never sent anywhere, and Focal keeps no copy. Closing the tab removes it. Straighten and crop work on a copy in memory, and the download is saved on your own device.</p>
+    </div></details>
+  </section>
+</main>
+
+<footer class="foot wrap"><p>Made by <a href="https://github.com/devadd2105-max">Devadarshan</a>. Open source on <a href="https://github.com/devadd2105-max/focal">GitHub</a>. Your photos are analysed in your browser and never uploaded.</p></footer>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
