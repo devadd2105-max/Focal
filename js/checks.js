@@ -14,7 +14,9 @@ const nearest = (pt, pts) => pts.map((p) => ({ p, d: dist(pt, p) })).sort((a, b)
 
 export const WEIGHTS = { exposure: 16, clipHi: 12, clipLo: 9, contrast: 8, focus: 26, noise: 12, isolationFault: 10, shake: 14, iso: 5, aperture: 4, horizon: 14, verticals: 8, tangent: 6, cut: 8, placement: 10, subject: 8, small: 6, balance: 5, headroom: 6, cast: 9, saturation: 4, wbmode: 3, evcomp: 4, flash: 4, actionShutter: 10 };
 export const GROUP_OF = { exposure: 'light', clipHi: 'light', clipLo: 'light', contrast: 'light', evcomp: 'light', flash: 'light', focus: 'focus', noise: 'focus', isolationFault: 'focus', shake: 'focus', iso: 'focus', aperture: 'focus', actionShutter: 'focus', horizon: 'comp', verticals: 'comp', tangent: 'comp', cut: 'comp', placement: 'comp', subject: 'comp', small: 'comp', balance: 'comp', headroom: 'comp', cast: 'colour', saturation: 'colour', wbmode: 'colour' };
-export const GROUP_LABEL = { light: 'Light', focus: 'Sharpness', comp: 'Composition', colour: 'Colour' };
+Object.assign(WEIGHTS, { distraction: 5, glare: 5, clutter: 6, blends: 7, lightCharacter: 0, metering: 0 });
+Object.assign(GROUP_OF, { distraction: 'comp', glare: 'comp', clutter: 'comp', blends: 'comp', lightCharacter: 'light', metering: 'light' });
+export const GROUP_LABEL = { light: 'Light', focus: 'Sharpness', comp: 'Composition', colour: 'Colour', impact: 'Impact' };
 const GROUP_CAP = { light: 30, focus: 34, comp: 34, colour: 12 };
 
 /** How sharp is it? Uses edge steepness first, tile energy second, and admits when noise makes that unreliable. */
@@ -32,6 +34,7 @@ export const TECH = {
   golden: { label: 'Golden ratio and spiral', group: 'Placement', how: 'Put the subject near the points about 38% and 62% across the frame, slightly nearer the centre than thirds.' },
   centred: { label: 'Centred subject', group: 'Placement', how: 'A dead-centre subject works with symmetry or a strong, simple shape.' },
   diagonals: { label: 'Diagonals', group: 'Placement', how: 'Run lines or the subject along a corner-to-corner diagonal for energy.' },
+  triangles: { label: 'Triangles', group: 'Placement', how: 'Three points of interest that form a triangle give a stable, pleasing structure. A diagonal split into two triangles (the golden triangle) does the same.' },
   odds: { label: 'Rule of odds', group: 'Placement', how: 'Groups of three or five elements feel more natural than pairs.' },
   leadingRoom: { label: 'Looking and leading room', group: 'Placement', how: 'Leave more space in the direction a subject faces or moves.' },
   headroom: { label: 'Headroom', group: 'Placement', how: 'Leave a small gap above a head. Too little feels cramped; too much feels empty.' },
@@ -59,13 +62,14 @@ function baseFindings(m, settings, goalIds) {
   const fs = focusState(m);
 
   // ---- light
-  const ev = L.evMid;
-  if (ev < -1.3) add({ id: 'exposure', title: 'Underexposed', severity: clamp((-ev - 1.3) / 2.2), measure: `${f1(-ev)} stops below middle grey`, summary: 'The picture is darker than a typical well-exposed scene.', why: 'Median brightness sits well below middle grey, so shadows and mid-tones are muddy and noise shows when you brighten it.', fix: `Add about ${f1(Math.min(3, -ev - 0.5))} stops: raise exposure compensation, open the aperture, slow the shutter, or raise ISO. Check the histogram leans right.`, overlay: 'zebra' });
+  const ev = L.evMid, I = m.impact, dark = !!(I && ev < -1.3 && (L.p99 > 200 || I.vHi > 200));
+  if (dark) add({ id: 'exposure', title: 'Dark scene with bright accents', confidence: 'estimated', severity: clamp((-ev - 1.3) / 2.2) * 0.3, measure: `${f1(-ev)} stops below middle grey overall`, summary: 'Most of the frame is dark, but a few areas are bright. That reads as a night or low-key scene.', why: 'Night and low-key pictures are meant to be dark. They go wrong when the bright accents blow out or the dark areas hold no texture.', fix: 'Check the bright lights are not pure white (see the zebra overlay). If you want more of the scene visible, add one stop and keep the highlights under control.', overlay: 'zebra' });
+  else if (ev < -1.3) add({ id: 'exposure', title: 'Underexposed', severity: clamp((-ev - 1.3) / 2.2), measure: `${f1(-ev)} stops below middle grey`, summary: 'The picture is darker than a typical well-exposed scene.', why: 'Median brightness sits well below middle grey, so shadows and mid-tones are muddy and noise shows when you brighten it.', fix: `Add about ${f1(Math.min(3, -ev - 0.5))} stops: raise exposure compensation, open the aperture, slow the shutter, or raise ISO. Check the histogram leans right.`, overlay: 'zebra' });
   else if (ev > 1.1) add({ id: 'exposure', title: 'Overexposed', severity: clamp((ev - 1.1) / 2), measure: `${f1(ev)} stops above middle grey`, summary: 'The picture is brighter than a typical well-exposed scene.', why: 'Median brightness sits well above middle grey, so highlight detail is at risk and colours wash out.', fix: `Pull back about ${f1(Math.min(3, ev - 0.5))} stops: lower exposure compensation, close the aperture or shorten the shutter. Watch the red zebras.`, overlay: 'zebra' });
   else add({ id: 'exposure', state: 'good', title: 'Exposure', measure: `${ev >= 0 ? '+' : ''}${f1(ev)} EV vs middle grey`, summary: 'Overall brightness is in a comfortable range.' });
   if (L.clipHi > 0.01) add({ id: 'clipHi', title: 'Blown highlights', severity: clamp((L.clipHi - 0.01) / 0.12), measure: `${pct(L.clipHi)} of pixels pure white`, summary: 'Some bright areas have lost all detail.', why: 'Pure white cannot be recovered later, even from a RAW file if it clipped at capture.', fix: 'Expose for the highlights: lower exposure by one stop, or add a graduated filter. The red zebra overlay shows where.', overlay: 'zebra' });
-  if (L.clipLo > 0.04) add({ id: 'clipLo', title: 'Crushed shadows', severity: clamp((L.clipLo - 0.04) / 0.25), measure: `${pct(L.clipLo)} of pixels pure black`, summary: 'Dark areas have no detail left.', why: 'Large areas of solid black look heavy and hide texture.', fix: 'Raise exposure slightly, add fill light or a reflector, or lift shadows when editing. The blue zebra overlay shows where.', overlay: 'zebra' });
-  if (L.range < 100) add({ id: 'contrast', title: 'Flat contrast', severity: clamp((100 - L.range) / 100), measure: `tonal range ${Math.round(L.range)} of 255`, summary: 'Tones are squeezed into a narrow band, so the picture looks hazy.', why: 'Without both a real black and a real white, images look dull.', fix: 'Add contrast when editing, shoot with directional light, or remove haze with a lens hood or polariser.' });
+  if (L.clipLo > 0.04) add({ id: 'clipLo', title: 'Crushed shadows', severity: clamp((L.clipLo - 0.04) / 0.25) * (dark ? 0.3 : 1), measure: `${pct(L.clipLo)} of pixels pure black`, summary: 'Dark areas have no detail left.', why: 'Large areas of solid black look heavy and hide texture.', fix: 'Raise exposure slightly, add fill light or a reflector, or lift shadows when editing. The blue zebra overlay shows where.', overlay: 'zebra' });
+  if (L.range < 100 && !dark) add({ id: 'contrast', title: 'Flat contrast', severity: clamp((100 - L.range) / 100), measure: `tonal range ${Math.round(L.range)} of 255`, summary: 'Tones are squeezed into a narrow band, so the picture looks hazy.', why: 'Without both a real black and a real white, images look dull.', fix: 'Add contrast when editing, shoot with directional light, or remove haze with a lens hood or polariser.' });
 
   // ---- sharpness and noise
   if (fs.state === 'blurry' || fs.state === 'soft') {
@@ -120,6 +124,23 @@ function baseFindings(m, settings, goalIds) {
   }
   if (c.sat > 0.62) add({ id: 'saturation', title: 'Oversaturated', severity: clamp((c.sat - 0.62) / 0.25), measure: `average saturation ${pct(c.sat)}`, summary: 'Colours are very intense.', why: 'Extreme saturation clips colour detail and looks artificial.', fix: 'Lower saturation or vibrance a little.' });
 
+
+  // ---- what pulls the eye away, and how well the subject stands out
+  if (I && s) {
+    const lowKeyScene = dark || I.histogram.id === 'under' || I.histogram.id === 'lowkey';
+    if (I.edge && I.edge.share >= 0.4) add({ id: 'distraction', title: 'Distraction at the frame edge', confidence: 'estimated', severity: clamp(0.2 + (I.edge.share - 0.4) * 0.8, 0, 0.5), measure: `strong marks along the ${I.edge.side} edge`, summary: `Something bright or busy sits against the ${I.edge.side} edge, away from the subject.`, why: 'Anything with strong contrast near the border pulls the eye off the subject, and objects gain visual weight the closer they sit to the edge.', fix: 'Crop it out, shift your position slightly, or tone it down in editing. Scan the edges before you press the shutter, not just the subject.', overlay: 'subject' });
+    if (I.glare && I.glare.count >= 40 && I.glare.share >= 0.004) add({ id: 'glare', title: 'Scattered bright highlights', confidence: 'estimated', severity: clamp(0.2 + I.glare.share * 25, 0, 0.55), measure: `${I.glare.count} small bright spots, ${(I.glare.share * 100).toFixed(1)}% of the frame`, summary: 'Many tiny, very bright spots (glare on water or shiny surfaces) compete with the subject.', why: 'The eye goes to the brightest points in a picture. A scatter of sparkles gives it many places to land.', fix: 'Move to a different angle to lose the reflection, use a polarising filter, shoot when the sun is lower, or tone the highlights down when editing.', overlay: 'zebra' });
+    if (I.clutter != null && I.clutter >= 0.75 && (!m.isolation || m.isolation.ratio < 2)) add({ id: 'clutter', title: 'Busy background', confidence: 'estimated', severity: clamp(0.15 + (I.clutter - 0.75) * 1.2, 0, 0.45), measure: `${pct(I.clutter)} of the area around the subject is busy`, summary: 'The area around the subject has a lot of detail and is as sharp as the subject.', why: 'When the background is as detailed as the subject, nothing tells the eye which one matters.', fix: 'Open the aperture or step further from the background to blur it, change your angle to a calmer backdrop, or move closer so the subject fills the frame.', overlay: 'subject' });
+    if (!lowKeyScene && I.separation != null && I.separation < 0.35) add({ id: 'blends', title: 'Subject blends into its surroundings', confidence: 'estimated', severity: clamp(0.15 + (0.35 - I.separation) * 1.2, 0, 0.5), measure: `colour and brightness difference ${Math.round(I.deltaE)} (strong separation is 30 or more)`, summary: 'The subject is close to its background in both brightness and colour.', why: 'Photos work when the subject separates from what is behind it, through a difference in brightness, colour or sharpness.', fix: 'Pick a darker or lighter backdrop, light the subject from the side, use a contrasting colour, or blur the background with a wider aperture.', overlay: 'subject' });
+    if (I.direction) {
+      const d = I.direction, q = I.quality;
+      const where = d.kind === 'side' ? `from the ${d.from}` : d.kind === 'top' ? 'from above' : d.kind === 'below' ? 'from below' : 'evenly';
+      const tip = d.kind === 'even' ? (q === 'soft' ? 'Even, soft light is kind to faces and flowers but can look flat. Look for a little shadow on one side to give shape.' : 'Light that falls evenly gives little sense of shape. Turn the subject or move until one side is brighter.') : d.kind === 'side' ? 'Side light reveals texture and form. It is one of the most useful directions, especially at golden hour.' : d.kind === 'top' ? 'Light from above is typical at midday. It casts shadows under eyes and noses, so look for shade or a reflector for people.' : 'Light from below looks unusual and dramatic. Use it on purpose.';
+      add({ id: 'lightCharacter', state: 'info', confidence: 'estimated', title: `Light: ${q}, ${where}`, summary: `The subject looks ${q === 'hard' ? 'hard lit, with strong shadows and highlights' : q === 'soft' ? 'softly lit, with gentle shadows' : 'moderately lit'}${I.golden ? ' with warm, low-sun colour' : ''}, ${where}. ${tip}`, measure: `${q} light` });
+    }
+    if (I.quality === 'hard' && (L.clipHi > 0.01 || L.clipLo > 0.04) && !dark) add({ id: 'metering', state: 'info', confidence: 'estimated', title: 'Try spot or partial metering', summary: 'This is a high-contrast scene, and both ends of the histogram are clipping. The camera\'s average metering is being pulled by the extremes.', why: 'Evaluative metering averages the whole scene. A bright sky or a dark shadow can fool it, so the subject ends up too dark or too bright.', fix: 'Switch to spot or partial metering and read the subject itself. Use exposure compensation if the subject is much brighter or darker than middle grey.' });
+  }
+
   for (const f of settingsFindings(m, settings, goalIds, fs)) add(f);
   return out;
 }
@@ -149,6 +170,8 @@ export function techniques(m, settings) {
   } else for (const id of ['thirds', 'golden', 'centred', 'diagonals']) add(id, null, 'No clear subject to place.', 'estimated');
   const big = m.blobs.filter((b) => b.mass >= 0.35 * (m.blobs[0]?.mass || 1)), n = big.length;
   add('odds', n === 3 || n === 5, n ? `${n} main element${n > 1 ? 's' : ''} found${n === 3 || n === 5 ? ', an odd group' : n === 2 ? ' (a pair)' : ''}.` : 'No distinct elements found.', 'estimated', { overlay: 'subject' });
+  { const t3 = big.slice(0, 3), area3 = t3.length === 3 ? Math.abs((t3[1].cx - t3[0].cx) * (t3[2].cy - t3[0].cy) - (t3[2].cx - t3[0].cx) * (t3[1].cy - t3[0].cy)) / 2 : 0;
+    add('triangles', area3 >= 0.035, area3 >= 0.035 ? 'Three main elements form a triangle, which gives the picture a stable structure.' : t3.length === 3 ? 'The three main elements sit almost in a line.' : 'Fewer than three main elements to form a triangle.', 'estimated', { overlay: 'subject' }); }
   if (s) { const side = dir(s.cx); add('leadingRoom', side !== 'centre' && s.area > 0.01, side === 'centre' ? 'The subject is central, so room is equal on both sides.' : `The subject is on the ${side}, leaving ${pct(side === 'left' ? 1 - s.cx : s.cx)} of the frame on the other side. This works if it faces or moves that way.`, 'estimated'); }
   const vp = m.lines.vanishing;
   add('leadingLines', !!vp || (m.lines.diagShare >= 0.5 && m.lines.list.length >= 3), vp ? `${vp.lines} lines converge ${vp.inside ? 'inside the frame' : 'just outside the frame'} near ${pct(vp.x)} across, ${pct(vp.y)} down.` : 'No lines converge toward a point.', 'estimated', { overlay: 'lines' });
@@ -173,6 +196,49 @@ export function techniques(m, settings) {
   return out;
 }
 
+
+/* -------------------------------------------------- impact (what works) */
+const STRUCTURAL = ['thirds', 'golden', 'centred', 'diagonals', 'leadingLines', 'symmetry', 'reflection', 'negativeSpace', 'frame', 'layers', 'triangles', 'repetition', 'fill'];
+export function impactScore(m, used, techs) {
+  const I = m.impact, c = m.colour, L = m.light, strengths = [], lifts = [];
+  if (!I) return { score: 60, strengths, lifts };
+  const masses = m.blobs.map((b) => b.mass), total = masses.reduce((a, b) => a + b, 0) || 1, dominance = masses.length ? masses[0] / total : 0;
+  const lowKeyScene = I.histogram.id === 'under' || I.histogram.id === 'lowkey';
+  // 1. clarity: does one thing stand out from what is behind it?
+  const sep = I.separation ?? 0.3, calm = I.clutter == null ? 0.5 : clamp(1 - I.clutter, 0, 1), clarity = clamp(0.5 * sep + 0.25 * calm + 0.25 * clamp(dominance / 0.45, 0, 1), 0, 1);
+  // 2. light: a real tonal range, shape from direction, warm low sun
+  const rangeOk = clamp((L.range - 70) / 120, 0, 1), shape = !I.direction ? 0.2 : I.direction.kind === 'side' ? 1 : I.direction.kind === 'top' || I.direction.kind === 'below' ? 0.6 : 0.2;
+  const lightS = clamp(0.5 * rangeOk + 0.3 * shape + (I.golden ? 0.2 : 0), 0, 1) * (lowKeyScene && I.vHi > 200 ? 1 : lowKeyScene ? 0.6 : 1);
+  // 3. colour: a scheme and a restrained palette
+  const hv = { complementary: 1, analogous: 0.85, monochrome: 0.8, contrast: 0.5, neutral: 0.4 }[c.harmony] ?? 0.4, colourS = clamp(0.6 * hv + 0.4 * clamp((I.concentration - 0.3) / 0.35, 0, 1), 0, 1);
+  // 4. depth: layers and a sharpness gradient
+  const iso = m.isolation, depth = clamp(clamp(m.layers.count / 3, 0, 1) * 0.5 + (iso && iso.ratio >= 3 ? 0.5 : iso && iso.ratio >= 1.8 ? 0.25 : 0), 0, 1);
+  // 5. structure: placement, lines and shape techniques that are present
+  const nStruct = STRUCTURAL.filter((id) => used.has(id)).length, structure = clamp(nStruct / 3, 0, 1);
+  const score = Math.round(clamp(100 * (0.32 * clarity + 0.24 * lightS + 0.14 * colourS + 0.12 * depth + 0.18 * structure), 5, 100));
+
+  // what is working
+  if (I.separation != null && I.separation >= 0.7) strengths.push({ title: 'The subject stands out', detail: `It differs clearly from its background in brightness and colour (difference ${Math.round(I.deltaE)}).` });
+  if (m.isolation && m.isolation.ratio >= 3) strengths.push({ title: 'Background falls away', detail: `The subject is about ${Math.round(m.isolation.ratio * 10) / 10}x sharper than what surrounds it, which guides the eye.` });
+  if (c.harmony === 'complementary' && c.sat > 0.18) strengths.push({ title: 'Complementary colours', detail: 'Opposite colours on the colour wheel make each other look stronger.' });
+  else if ((c.harmony === 'analogous' || c.harmony === 'monochrome') && c.sat > 0.18) strengths.push({ title: 'Harmonious palette', detail: 'The colours sit close together on the wheel, which feels calm and cohesive.' });
+  if (I.direction && I.direction.kind === 'side') strengths.push({ title: 'Light that shapes the subject', detail: `Light falls from the ${I.direction.from}, which gives the subject form and texture.` });
+  if (I.golden) strengths.push({ title: 'Warm, low-sun colour', detail: 'The warm tones suggest light from near sunrise or sunset, usually the most flattering.' });
+  if (I.histogram.id === 'balanced' && !I.edge) strengths.push({ title: 'Clean edges and a healthy histogram', detail: 'Tones spread from shadow to highlight and nothing strong sits on the border.' });
+  if (m.layers.count >= 3) strengths.push({ title: 'Layers give depth', detail: 'Detail changes from near to far, which suggests a foreground, middle and background.' });
+  const nice = techs.filter((t) => t.used && ['thirds', 'golden', 'diagonals', 'leadingLines', 'symmetry', 'reflection', 'negativeSpace', 'frame', 'triangles'].includes(t.id));
+  for (const t of nice.slice(0, 2)) strengths.push({ title: t.label, detail: t.detail });
+
+  // how to lift it (only things that would actually add impact)
+  if (I.separation != null && I.separation < 0.5 && !lowKeyScene) lifts.push({ title: 'Make the subject stand out more', detail: 'Give it a darker or lighter backdrop, a contrasting colour, or blur what is behind it.' });
+  if (I.direction && I.direction.kind === 'even' && !lowKeyScene) lifts.push({ title: 'Look for shaping light', detail: 'Even light is flat. Turn the subject, or wait until light falls from one side or low sun adds a glow.' });
+  if (m.layers.count < 2 && !lowKeyScene) lifts.push({ title: 'Add depth with a foreground', detail: 'Include something near the camera, such as a leaf or a rail, so the scene has a near, middle and far layer.' });
+  if (!nice.length) lifts.push({ title: 'Give the picture a structure', detail: 'Use leading lines, a triangle of interest, thirds placement or a calm empty area so the eye has a path.' });
+  if (c.harmony === 'neutral' || c.harmony === 'contrast') lifts.push({ title: 'Simplify the colour', detail: 'Limit the palette to two or three colours, or let one accent colour stand out from muted surroundings.' });
+  if (I.concentration < 0.45) lifts.push({ title: 'Too many colours compete', detail: 'A restrained palette makes colour feel intentional. Change your angle, or reduce saturation of the distracting ones.' });
+  return { score, strengths, lifts: lifts.slice(0, 3), parts: { clarity, light: lightS, colour: colourS, depth, structure } };
+}
+
 /* ------------------------------------------------------ scoring etc. */
 export function evaluate(m, { goals = [], settings = null } = {}) {
   const goalIds = goals.map((g) => g.id), merged = mergeGoals(goals), base = baseFindings(m, settings, goalIds), techs = techniques(m, settings);
@@ -185,10 +251,13 @@ export function evaluate(m, { goals = [], settings = null } = {}) {
   const used = new Set(techs.filter((t) => t.used).map((t) => t.id));
   const groups = {}; for (const g of Object.keys(GROUP_CAP)) groups[g] = 0;
   for (const f of findings) if (f.state === 'issue') groups[f.group] += f.effective * f.weight;
-  const bonus = clamp([...used].filter((id) => !['leadingRoom', 'odds', 'harmony'].includes(id)).length * 2, 0, 8);
   const scores = {};
   for (const g of Object.keys(GROUP_CAP)) scores[g] = Math.round(clamp(100 - groups[g] * 100 / GROUP_CAP[g], 5, 100));
-  const worst = Math.min(scores.light, scores.focus), overall = Math.round(clamp(scores.light * 0.25 + scores.focus * 0.27 + scores.comp * 0.33 + scores.colour * 0.15 + bonus - 4 - 0.45 * Math.max(0, 70 - worst), 5, 98));
+  const imp = impactScore(m, used, techs);
+  scores.impact = imp.score;
+  // An absence of faults is only half of a good photograph, so the fault score and the impact score each count for half.
+  const tech = scores.light * 0.28 + scores.focus * 0.3 + scores.comp * 0.3 + scores.colour * 0.12, worst = Math.min(scores.light, scores.focus);
+  const overall = Math.round(clamp(tech * 0.5 + imp.score * 0.5 - 0.45 * Math.max(0, 70 - worst), 5, 96));
   // goal match: same penalties with the goal's weights, plus credit for the techniques that goal expects
   let goalMatch = null, expected = [];
   if (goals.length) {
@@ -198,5 +267,5 @@ export function evaluate(m, { goals = [], settings = null } = {}) {
   }
   const order = findings.filter((f) => f.state === 'issue' && f.effective > 0.05).sort((a, b) => b.effective * b.weight - a.effective * a.weight);
   const intents = findings.filter((f) => f.state === 'intent');
-  return { findings, techniques: techs, scores, overall, goalMatch, expected, fixFirst: order.slice(0, 3), intents, tips: merged.tips, focus: focusState(m), placement: placement(m), notMeasured: NOT_MEASURED };
+  return { findings, techniques: techs, scores, overall, strengths: imp.strengths, lifts: imp.lifts, histogram: m.impact?.histogram ?? null, goalMatch, expected, fixFirst: order.slice(0, 3), intents, tips: merged.tips, focus: focusState(m), placement: placement(m), notMeasured: NOT_MEASURED };
 }

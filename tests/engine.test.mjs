@@ -86,3 +86,42 @@ test('exif reader parses a hand-built JPEG header', () => {
   assert.equal(parseExif(new Uint8Array([1, 2, 3]).buffer), null);
   assert.equal(formatShutter(1 / 250), '1/250 s');
 });
+
+/* ---- impact, scene-aware exposure, histogram shapes --------------------------------------- */
+import { render } from '../js/scenes.js';
+import { histogramShape } from '../js/impact.js';
+
+const dot = (u, v, cx, cy, r) => Math.hypot(u - cx, v - cy) <= r;
+// a calm, graded backdrop with one round subject
+const subjectScene = (subj, bg) => render(320, 240, (u, v) => (dot(u * 4 / 3, v, 0.667, 0.5, 0.2) ? subj : bg.map((c, i) => c + (i === 2 ? 12 : 6) * v)));
+
+test('a subject that stands out scores higher impact than one that blends in', () => {
+  const strong = evaluate(analyze(subjectScene([220, 40, 50], [70, 120, 90]))), weak = evaluate(analyze(subjectScene([118, 122, 118], [112, 118, 114])));
+  assert.ok(strong.scores.impact > weak.scores.impact + 8, `impact ${strong.scores.impact} vs ${weak.scores.impact}`);
+  assert.ok(strong.strengths.some((s) => /stands out/i.test(s.title)));
+  assert.ok(ids(weak).includes('blends'), 'blending subject flagged');
+});
+test('a technically clean but plain picture no longer scores near the top', () => {
+  const r = evaluate(analyze(subjectScene([118, 122, 118], [112, 118, 114])));
+  assert.ok(r.overall < 88, `overall ${r.overall}`);
+  assert.ok(r.scores.impact < 70);
+});
+test('a night scene with bright lights is not called simply underexposed', () => {
+  const night = render(320, 240, (u, v) => (dot(u * 4 / 3, v, 0.5, 0.45, 0.025) || dot(u * 4 / 3, v, 0.8, 0.55, 0.02) ? [255, 235, 190] : [6, 7, 12]));
+  const e = evaluate(analyze(night)).findings.find((f) => f.id === 'exposure');
+  assert.ok(e && /Dark scene/.test(e.title), e && e.title); assert.ok(e.severity < 0.4);
+  const dim = evaluate(analyze(render(320, 240, (u, v) => [10 + 8 * u, 10 + 8 * v, 14]))).findings.find((f) => f.id === 'exposure');
+  assert.equal(dim.title, 'Underexposed', 'a uniformly dim picture still is');
+});
+test('histogram shapes are named', () => {
+  const mk = (hist, extra) => ({ hist, p1: 0, p99: 255, key: 'mid', ...extra });
+  const spread = (lo, hi) => { const h = new Array(64).fill(0); for (let i = lo; i < hi; i++) h[i] = 1 / (hi - lo); return h; };
+  assert.equal(histogramShape(mk(spread(0, 8), { p99: 40 })).id, 'under');
+  assert.equal(histogramShape(mk(spread(56, 64), { p1: 220 })).id, 'over');
+  assert.equal(histogramShape(mk(spread(26, 38), { p1: 100, p99: 160 })).id, 'dull');
+  assert.equal(histogramShape(mk(spread(6, 58))).id, 'balanced');
+});
+test('three separated elements are read as a triangle', () => {
+  const tri = render(320, 240, (u, v) => ([[0.25, 0.75], [0.75, 0.75], [0.5, 0.25]].some(([x, y]) => dot(u, v, x, y, 0.07)) ? [235, 200, 60] : [40, 50, 70]));
+  assert.ok(evaluate(analyze(tri)).techniques.find((t) => t.id === 'triangles').used);
+});

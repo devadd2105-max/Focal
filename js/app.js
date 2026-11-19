@@ -1,6 +1,7 @@
 // Focal: wires the page to the analysis engine. Everything runs in the browser; nothing is uploaded.
 import { analyze } from './analyze.js';
 import { evaluate, GROUP_LABEL } from './checks.js';
+import { playbookHtml, eyeCard, workingCard, histogramCard } from './guide.js';
 import { parseExif, formatShutter } from './exif.js';
 import { GOALS, parseIntent } from './intent.js';
 import { describeSettings, settingsFromForm, SETTINGS_IDS } from './settings.js';
@@ -113,8 +114,8 @@ function refresh(first) {
   if (first) selectTab('overview', false);
 }
 
-const band = (v) => (v >= 80 ? 'var(--good)' : v >= 60 ? 'var(--warn)' : 'var(--bad)');
-function verdict(v) { return v >= 88 ? 'Strong picture' : v >= 74 ? 'Good, with a few fixes' : v >= 55 ? 'Needs some work' : 'Needs a rethink'; }
+const band = (v) => (v >= 75 ? 'var(--good)' : v >= 55 ? 'var(--warn)' : 'var(--bad)');
+function verdict(v) { return v >= 82 ? 'Strong picture' : v >= 70 ? 'Good, with a few fixes' : v >= 50 ? 'Needs some work' : 'Needs a rethink'; }
 
 function renderScore() {
   const r = S.ev; $('big').textContent = r.overall; $('big').style.setProperty('--c', band(r.overall)); $('verdict').textContent = verdict(r.overall);
@@ -156,13 +157,13 @@ function renderPanels() {
   const p = currentGoals();
   // overview
   const goalBits = r.goalMatch != null ? `<div class="setcard"><h4>Your goal</h4><p class="srcnote">Matched: ${p.matched.map((x) => esc(x.label)).join(', ')}.</p>${r.expected.length ? `<p class="srcnote">Techniques this goal usually uses:</p><ul class="chip-list">${r.expected.map((e) => `<li>${e.used ? '✓ ' : ''}${esc(e.label)}${e.used ? '' : ' (not found)'}</li>`).join('')}</ul>` : ''}${r.tips.length ? `<ul class="tips" style="margin-top:10px">${r.tips.map((t) => `<li>${esc(t.text)}</li>`).join('')}</ul>` : ''}</div>` : '';
-  $('p-overview').innerHTML = `${goalBits}${cards(F.filter((f) => notSet(f) && (f.state === 'issue' || f.state === 'intent')))}${F.some((f) => notSet(f) && f.state === 'issue') ? '' : '<p>No problems found in the measured checks.</p>'}<h3>Working well</h3>${cards(F.filter((f) => notSet(f) && f.state === 'good')) || '<p>Nothing stands out yet.</p>'}<h3>Not measured</h3><p>Focal cannot judge these, so a low score does not mean a bad photo:</p><ul class="chip-list">${r.notMeasured.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`;
+  $('p-overview').innerHTML = `${workingCard(r)}${goalBits}${cards(F.filter((f) => notSet(f) && (f.state === 'issue' || f.state === 'intent')))}${F.some((f) => notSet(f) && f.state === 'issue') ? '' : '<p>No problems found in the measured checks.</p>'}<h3>Working well</h3>${cards(F.filter((f) => notSet(f) && f.state === 'good')) || '<p>Nothing stands out yet.</p>'}<h3>Not measured</h3><p>Focal cannot judge these, so a low score does not mean a bad photo:</p><ul class="chip-list">${r.notMeasured.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`;
   // composition
   const pl = r.placement, fitRows = pl ? ['thirds', 'golden', 'centred', 'diagonals'].map((k) => `<div class="fit ${pl.best.id === k ? 'best' : ''}"><b>${{ thirds: 'Rule of thirds', golden: 'Golden ratio', centred: 'Centred', diagonals: 'Diagonal' }[k]}</b><span class="track"><span class="fill" style="width:${Math.round(pl.fits[k].fit * 100)}%"></span></span><em>${Math.round(pl.fits[k].fit * 100)}</em></div>`).join('') : '';
   $('p-comp').innerHTML = `${pl ? `<div class="setcard"><h4>Where the subject sits</h4><p class="srcnote">How closely the main subject matches each classic placement (100 is exact). Turn on Subject and a grid to see it.</p><div class="fits">${fitRows}</div></div>` : '<p>No clear main subject was found, so placement was not checked.</p>'}${cards(group('comp')) || '<p>No composition problems found.</p>'}`;
   // light and colour
   const c = m.colour;
-  $('p-light').innerHTML = `<div class="setcard"><h4>Exposure</h4><div class="meter">${meterSvg(m.light.evMid)}</div></div>${cards([...group('light'), ...group('colour')])}${c.palette.length ? `<h3>Main colours</h3><div class="palette" role="img" aria-label="Main colours of the photo">${c.palette.map((q) => `<i style="background:${q.hex};flex:${Math.max(q.share, 0.02)}"></i>`).join('')}</div><p class="pal-l">${c.palette.map((q) => esc(q.hex)).join(' ')}</p><p>Colour scheme: ${esc(c.harmony)}. Average saturation ${Math.round(c.sat * 100)}%.</p>` : ''}`;
+  $('p-light').innerHTML = `<div class="setcard"><h4>Exposure</h4><div class="meter">${meterSvg(m.light.evMid)}</div></div>${histogramCard(r.histogram)}${cards([...group('light'), ...group('colour')])}${c.palette.length ? `<h3>Main colours</h3><div class="palette" role="img" aria-label="Main colours of the photo">${c.palette.map((q) => `<i style="background:${q.hex};flex:${Math.max(q.share, 0.02)}"></i>`).join('')}</div><p class="pal-l">${c.palette.map((q) => esc(q.hex)).join(' ')}</p><p>Colour scheme: ${esc(c.harmony)}. Average saturation ${Math.round(c.sat * 100)}%.</p>` : ''}`;
   // focus
   $('p-focus').innerHTML = `${cards(group('focus')) || '<p>No sharpness problems found.</p>'}<p>Turn on <b>Focus</b> over the photo to see the sharpest areas in cyan.</p>`;
   // settings
@@ -171,7 +172,7 @@ function renderPanels() {
   renderCrops();
   // techniques
   const groups = {}; for (const t of r.techniques) (groups[t.group] ||= []).push(t);
-  $('p-tech').innerHTML = `<p>${r.techniques.filter((t) => t.used).length} of ${r.techniques.length} techniques found. Estimates are marked.</p>` + Object.entries(groups).map(([g, ts]) => `<div class="tgroup"><h3>${esc(g)}</h3>${ts.map((t) => `<details class="tech ${t.used ? 'used' : ''}"><summary><span class="mk" aria-hidden="true">${t.used ? '✓' : ''}</span><span>${esc(t.label)}<span class="visually-hidden">${t.used ? ' (found)' : ' (not found)'}</span></span><span class="tag ${t.confidence === 'estimated' ? 'est' : ''}">${t.confidence === 'estimated' ? 'estimate' : 'measured'}</span></summary><div class="body"><span>${esc(t.detail)}</span><span><b>How:</b> ${esc(t.how)}</span></div></details>`).join('')}</div>`).join('');
+  $('p-tech').innerHTML = `${eyeCard()}<p>${r.techniques.filter((t) => t.used).length} of ${r.techniques.length} techniques found. Estimates are marked.</p>` + Object.entries(groups).map(([g, ts]) => `<div class="tgroup"><h3>${esc(g)}</h3>${ts.map((t) => `<details class="tech ${t.used ? 'used' : ''}"><summary><span class="mk" aria-hidden="true">${t.used ? '✓' : ''}</span><span>${esc(t.label)}<span class="visually-hidden">${t.used ? ' (found)' : ' (not found)'}</span></span><span class="tag ${t.confidence === 'estimated' ? 'est' : ''}">${t.confidence === 'estimated' ? 'estimate' : 'measured'}</span></summary><div class="body"><span>${esc(t.detail)}</span><span><b>How:</b> ${esc(t.how)}</span></div></details>`).join('')}</div>`).join('');
 }
 
 /* settings form */
@@ -192,7 +193,7 @@ function renderSettings(findings) {
     <label>White balance<select name="wb">${sel(s.wb || '', [['', 'Not sure'], ['auto', 'Auto'], ['manual', 'Manual or preset']])}</select></label>
     <label>Flash<select name="flash">${sel(s.flash == null ? '' : s.flash ? 'on' : 'off', [['', 'Not sure'], ['off', 'Did not fire'], ['on', 'Fired']])}</select></label>
     <div class="row wide" style="grid-column:1/-1"><button class="btn" type="submit">Check these settings</button><button class="btn ghost" type="button" id="setclear">Clear</button></div></form></div>
-    ${cards(findings) || `<p>${S.settings ? 'No problems found with these settings.' : 'Enter at least an aperture, shutter speed or ISO to see advice.'}</p>`}`;
+    ${cards(findings) || `<p>${S.settings ? 'No problems found with these settings.' : 'Enter at least an aperture, shutter speed or ISO to see advice.'}</p>`}${playbookHtml()}`;
 }
 document.addEventListener('submit', (e) => {
   if (e.target.id !== 'setform') return; e.preventDefault();

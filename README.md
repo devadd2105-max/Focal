@@ -9,8 +9,10 @@ A photo coach that runs entirely in your browser. Drop in a photo and Focal chec
 ## What it checks
 
 - **Framing:** rule of thirds, golden ratio, diagonals, centred subjects, rule of odds, leading lines and vanishing point, symmetry, reflections, frame within a frame, negative space, fill the frame, layers, repetition, isolation, headroom, Dutch angle, silhouette, low and high key, colour harmony, monochrome.
+- **Impact (what makes a photo work):** how clearly the subject separates from its background, clutter, distractions at the frame edge, scattered bright highlights, the direction and hardness of the light, colour harmony and palette, depth and structure. The overall score is half fault-free technique and half impact, so a clean but plain picture no longer scores near the top. Night and low-key scenes with bright accents are not called underexposed.
 - **Technical:** horizon tilt, leaning verticals, exposure, histogram, clipped highlights and shadows, contrast, sharpness against noise, colour cast, saturation.
 - **Camera settings:** read from EXIF or typed in. Checks the exposure triangle (aperture, shutter, ISO), the 1/focal-length shake rule, diffraction, white balance mode, exposure compensation and flash, and suggests equivalent exposures.
+- **Teaching:** names the histogram shape (balanced, underexposed, overexposed, dull, high-contrast, low-key), starting settings by situation, shooting and metering modes, white-balance presets, and questions that train the eye.
 - **Crops and straighten:** tested crop suggestions with a preview, and a one-click straighten that crops to the largest clean rectangle.
 - **Your goal:** say what you are trying to achieve (free text or chips). Findings are re-weighted and some "faults" are marked as deliberate, such as crushed shadows in a silhouette.
 

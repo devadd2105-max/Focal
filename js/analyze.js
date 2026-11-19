@@ -2,6 +2,7 @@
 // checks.js, where the photographer's stated goal can change what counts as a fault.
 import { luma, downscale, boxBlur, sobel, percentile, components, rgbToHsv, clamp } from './pixels.js';
 import { geometry } from './geometry.js';
+import { impactMetrics } from './impact.js';
 
 const srgbToLin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
 
@@ -157,6 +158,7 @@ export function analyze(src) {
   const sal = saliency(small, sharp), blobs = blobsFrom(sal), colour = colourStats(work);
   const geo = geometry({ small, line, work, sal, blobs, sharp });
   const subject = blobs[0] || null;
+  const impact = impactMetrics({ lab: toLab(small), sal, subject, work, light, colour });
   // focus-peaking mask at working resolution (for the overlay)
   const gw = luma(work), lw = laplacian(gw, work.w, work.h), thr = Math.max(percentile(lw, 0.93), 6), peak = new Uint8Array(work.w * work.h);
   for (let i = 0; i < lw.length; i++) peak[i] = lw[i] >= thr ? 1 : 0;
@@ -169,6 +171,6 @@ export function analyze(src) {
   }
   return {
     size: { w: src.w, h: src.h }, aspect: src.w / src.h, light, sharp: { acuity, p90: sharp.p90, top: sharp.top, median: sharp.median, area: sharp.area, tiles: Array.from(sharp.tiles), T: sharp.T },
-    noise: { sigma: noiseAll, shadow: noiseShadow }, blobs, subject, sal, colour, isolation, focus: { w: work.w, h: work.h, mask: peak }, ...geo,
+    noise: { sigma: noiseAll, shadow: noiseShadow }, blobs, subject, sal, colour, isolation, impact, focus: { w: work.w, h: work.h, mask: peak }, ...geo,
   };
 }
