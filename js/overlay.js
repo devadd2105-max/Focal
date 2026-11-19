@@ -1,5 +1,5 @@
 // Draws the coach's marks on top of the photo. Everything is in 0..1 image coordinates.
-const CYAN = '#5fd4c4', AMBER = '#ffb84a', RED = '#ff6b7d', BLUE = '#7aa2ff';
+const CYAN = '#4f9bff', AMBER = '#ffb84a', RED = '#ff6b7d', BLUE = '#b4c8ff';
 
 function maskCanvas(w, h, paint) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -79,7 +79,7 @@ export function draw(canvas, m, ev, state, assets) {
     for (const [px, py, dx, dy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]]) { g.beginPath(); g.moveTo(px + dx * c, py); g.lineTo(px, py); g.lineTo(px, py + dy * c); g.stroke(); }
     g.fillStyle = CYAN; g.beginPath(); g.arc(X(s.cx), Y(s.cy), 4, 0, 7); g.fill();
     tag(g, 'Main subject (estimate)', x, y - 28, CYAN, W, H);
-    g.lineWidth = 1.5; g.strokeStyle = 'rgba(95,212,196,.55)'; g.setLineDash([4, 4]);
+    g.lineWidth = 1.5; g.strokeStyle = 'rgba(79,155,255,.55)'; g.setLineDash([4, 4]);
     for (const b of m.blobs.slice(1, 4)) g.strokeRect(X(b.x0), Y(b.y0), X(b.x1 - b.x0), Y(b.y1 - b.y0)); g.setLineDash([]);
   }
   if (state.crop) {
@@ -100,7 +100,7 @@ export function drawHist(canvas, L) {
   g.fillStyle = 'rgba(255,107,125,.16)'; g.fillRect(W - bw * 2, 0, bw * 2, H); g.fillStyle = 'rgba(122,162,255,.18)'; g.fillRect(0, 0, bw * 2, H);
   g.fillStyle = '#d8dde4';
   bins.forEach((v, i) => { const h = (Math.sqrt(v) / max) * (H - 4); g.fillRect(i * bw, H - h, Math.max(1, bw - 0.6), h); });
-  const mid = ((Math.pow(0.18, 1 / 2.2)) * 255) / 255; g.strokeStyle = 'rgba(95,212,196,.9)'; g.lineWidth = 1.2; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(W * mid, 0); g.lineTo(W * mid, H); g.stroke(); g.setLineDash([]);
+  const mid = ((Math.pow(0.18, 1 / 2.2)) * 255) / 255; g.strokeStyle = 'rgba(79,155,255,.9)'; g.lineWidth = 1.2; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(W * mid, 0); g.lineTo(W * mid, H); g.stroke(); g.setLineDash([]);
   if (L.clipHi > 0.01) { g.fillStyle = '#ff6b7d'; g.fillRect(W - 4, 0, 4, 4); }
-  if (L.clipLo > 0.04) { g.fillStyle = '#7aa2ff'; g.fillRect(0, 0, 4, 4); }
+  if (L.clipLo > 0.04) { g.fillStyle = '#b4c8ff'; g.fillRect(0, 0, 4, 4); }
 }

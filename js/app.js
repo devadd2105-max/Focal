@@ -153,7 +153,7 @@ const cards = (fs) => fs.length ? fs.sort(order).map(card).join('') : '';
 
 function meterSvg(ev) {
   const lo = -4, hi = 4, x = (v) => 20 + ((Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo)) * 460, good = ev > -1.3 && ev < 1.1;
-  return `<svg viewBox="0 0 500 74" role="img" aria-label="Exposure ${ev.toFixed(1)} stops from middle grey"><rect x="20" y="22" width="460" height="14" rx="7" fill="#1b1d20"/><rect x="${x(-1.3)}" y="22" width="${x(1.1) - x(-1.3)}" height="14" fill="#5fd4c455"/><line x1="${x(0)}" y1="16" x2="${x(0)}" y2="42" stroke="#5fd4c4" stroke-width="2"/><circle cx="${x(ev)}" cy="29" r="9" fill="${good ? '#5fd4c4' : '#ffb84a'}" stroke="#141518" stroke-width="3"/><g fill="#aab0ba" font-size="12" font-family="ui-monospace,monospace" text-anchor="middle"><text x="20" y="62">-4 EV</text><text x="${x(0)}" y="62">middle grey</text><text x="480" y="62">+4 EV</text></g></svg>`;
+  return `<svg viewBox="0 0 500 74" role="img" aria-label="Exposure ${ev.toFixed(1)} stops from middle grey"><rect x="20" y="22" width="460" height="14" rx="7" fill="#1b1d20"/><rect x="${x(-1.3)}" y="22" width="${x(1.1) - x(-1.3)}" height="14" fill="#4f9bff55"/><line x1="${x(0)}" y1="16" x2="${x(0)}" y2="42" stroke="#4f9bff" stroke-width="2"/><circle cx="${x(ev)}" cy="29" r="9" fill="${good ? '#4f9bff' : '#ffb84a'}" stroke="#141518" stroke-width="3"/><g fill="#aab0ba" font-size="12" font-family="ui-monospace,monospace" text-anchor="middle"><text x="20" y="62">-4 EV</text><text x="${x(0)}" y="62">middle grey</text><text x="480" y="62">+4 EV</text></g></svg>`;
 }
 
 function renderPanels() {
