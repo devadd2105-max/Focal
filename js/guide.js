@@ -9,7 +9,10 @@ export const SITUATIONS = [
   { what: 'Landscape, everything sharp', mode: 'Aperture priority', ap: 'f/8 to f/11', sh: 'any, on a tripod', iso: '100', note: 'Evaluative metering. Past f/16 diffraction softens detail.' },
   { what: 'Street', mode: 'Aperture priority', ap: 'f/5.6 to f/8', sh: '1/250 s or faster', iso: 'Auto, up to 3200', note: 'Continuous autofocus. Pre-focus on the spot where the action will be.' },
   { what: 'Night, handheld', mode: 'Manual or aperture priority', ap: 'f/1.8 to f/2.8', sh: '1/60 s or faster', iso: '3200 to 6400', note: 'Brace yourself on a wall. Expose for the lights so they do not blow out.' },
-  { what: 'Night or stars, tripod', mode: 'Manual', ap: 'f/1.4 to f/2.8', sh: '10 to 30 s', iso: '1600 to 6400', note: 'Manual focus. Use a 2-second timer or a remote so you do not shake the camera.' },
+  { what: 'Night or stars, tripod', mode: 'Manual', ap: 'f/1.4 to f/2.8', sh: 'about 500 ÷ focal length, or less', iso: '1600 to 6400', note: 'The 500 rule is only a ballpark and tends to be too long on high-resolution sensors, so shorten it if stars trail. Manual focus, and a 2-second timer or remote.' },
+  { what: 'Interiors and real estate', mode: 'Manual or aperture priority', ap: 'f/8 to f/11', sh: 'any, on a tripod', iso: '100 to 400', note: 'Wide lens, camera level and at about waist height so verticals stay straight. Bracket exposures so the windows are not blown out.' },
+  { what: 'Food', mode: 'Aperture priority', ap: 'f/2.8 to f/5.6', sh: 'any, on a tripod', iso: '100 to 400', note: 'Light from the side or behind, from a window, with a white card opposite to fill the shadows. Keep the background simple.' },
+  { what: 'Underwater', mode: 'Manual', ap: 'f/8 to f/11', sh: '1/125 s', iso: '100 to 400', note: 'Red light vanishes within a metre or so, so get very close and add a strobe or a red filter. Slightly underexpose bright reds.' },
   { what: 'Moving subject', mode: 'Shutter priority', ap: 'camera picks', sh: '1/500 to 1/2000 s or faster', iso: 'Auto', note: 'Walking people need about 1/250 s. Running or flying subjects need 1/1000 s or more.' },
   { what: 'Silky water', mode: 'Manual', ap: 'f/11 to f/16', sh: '1/4 to 2 s', iso: '100', note: 'Needs a tripod, and often a neutral-density filter in daylight.' },
 ];
