@@ -95,3 +95,18 @@ export function mergeGoals(goals) {
   }
   return { w, embrace, expects: [...expects], tips };
 }
+
+/* A cautious guess at what the picture is, from measurements only (no classifier). It is offered as a suggestion the person can accept, never applied silently. */
+export function suggestGoal(m) {
+  const L = m.light, I = m.impact, s = m.subject, hz = m.lines.horizon;
+  if (!L || !I) return null;
+  const wide = m.size.w >= m.size.h * 1.2;
+  const levelHorizon = hz && !hz.converging && Math.abs(hz.angle) <= 6 && hz.len >= 0.6;
+  if (L.evMid < -2.2 && (L.p99 > 200 || I.vHi > 200)) return { id: 'night', why: 'dark overall with a few bright lights' };
+  if (s && L.p99 > 215 && I.separation >= 0.5 && I.vMedian < 70 && s.area < 0.5 && s.area > 0.05) return { id: 'silhouette', why: 'a dark shape against a bright background' };
+  if (levelHorizon && wide && (!s || s.area < 0.3) && m.layers.count >= 2) return { id: 'landscape', why: 'a wide frame with a level horizon and layers of depth' };
+  if (m.lines.verticalCount >= 4 && Math.abs(m.lines.verticalTilt ?? 9) < 4 && (!s || s.area < 0.5)) return { id: 'architecture', why: 'several strong vertical lines' };
+  if (m.space.largest >= 0.6 && m.blobs.length <= 2) return { id: 'minimalism', why: 'one simple subject and lots of empty space' };
+  if (s && s.area >= 0.1 && s.area <= 0.6 && m.isolation && m.isolation.ratio >= 2 && !wide) return { id: 'portrait', why: 'a single upright subject that is sharper than its background' };
+  return null;
+}

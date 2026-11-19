@@ -3,7 +3,7 @@ import { analyze } from './analyze.js';
 import { evaluate, GROUP_LABEL } from './checks.js';
 import { playbookHtml, eyeCard, workingCard, histogramCard } from './guide.js';
 import { parseExif, formatShutter } from './exif.js';
-import { GOALS, parseIntent } from './intent.js';
+import { GOALS, GOAL_BY_ID, parseIntent, suggestGoal } from './intent.js';
 import { describeSettings, settingsFromForm, SETTINGS_IDS } from './settings.js';
 import { suggestCrops, straightenSize } from './crops.js';
 import { SAMPLES } from './scenes.js';
@@ -108,7 +108,7 @@ async function analyseCurrent(token, fresh) {
 function refresh(first) {
   const goals = currentGoals().goals;
   S.ev = evaluate(S.m, { goals, settings: S.settings });
-  S.crops = suggestCrops(S.m);
+  S.crops = suggestCrops(S.m); S.sugg = suggestGoal(S.m);
   renderScore(); renderFirst(); renderPanels(); renderLcd(); syncTools();
   drawHist($('hist'), S.m.light); redraw();
   if (first) selectTab('overview', false);
@@ -122,7 +122,11 @@ function renderScore() {
   $('bars').innerHTML = Object.entries(r.scores).map(([g, v]) => `<div class="bar"><b>${GROUP_LABEL[g]}</b><span class="track"><span class="fill" style="width:${v}%;--c:${band(v)}"></span></span><em>${v}</em></div>`).join('');
   const gl = $('goalline'), p = currentGoals();
   if (r.goalMatch != null) { gl.hidden = false; gl.innerHTML = `<b>Fit for your goal: ${r.goalMatch}/100.</b> Judged as ${p.matched.map((x) => esc(x.label)).join(', ')}.${r.intents.length ? ` ${r.intents.length} thing${r.intents.length > 1 ? 's' : ''} that would normally count against it ${r.intents.length > 1 ? 'are' : 'is'} marked as deliberate.` : ''}`; }
-  else gl.hidden = true;
+  else if (S.sugg && !S.picked.size && !S.text.trim() && GOAL_BY_ID[S.sugg.id]) {
+    const g = GOAL_BY_ID[S.sugg.id]; gl.hidden = false;
+    gl.innerHTML = `<b>This could be ${/^[aeiou]/i.test(g.label) ? 'an' : 'a'} ${esc(g.label.toLowerCase())} picture</b> (${esc(S.sugg.why)}). It is only a guess. <button type="button" class="chip" id="acceptsugg">Judge it as ${esc(g.label.toLowerCase())}</button>`;
+    $('acceptsugg').addEventListener('click', () => { S.picked.add(g.id); document.querySelectorAll('.chip[data-goal]').forEach((x) => x.setAttribute('aria-pressed', S.picked.has(x.dataset.goal))); intentChanged(); });
+  } else gl.hidden = true;
   requestAnimationFrame(() => document.querySelectorAll('#bars .fill').forEach((f) => { f.style.width = f.style.width; }));
 }
 

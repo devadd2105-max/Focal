@@ -157,3 +157,11 @@ test('a line running behind or through the subject is flagged as a merger', () =
   const st = (l) => evaluate(analyze(mk(l))).findings.find((f) => f.id === 'merger')?.state;
   assert.equal(st('h'), 'issue'); assert.equal(st('v'), 'issue'); assert.equal(st(null), undefined);
 });
+
+test('goal suggestion is cautious and only names a goal that exists', async () => {
+  const { suggestGoal, GOAL_BY_ID } = await import('../js/intent.js');
+  assert.equal(suggestGoal(analyze(minimal({})))?.id, 'minimalism');
+  assert.equal(suggestGoal(analyze(symmetric({})))?.id, 'architecture');
+  assert.notEqual(suggestGoal(analyze(landscape({})))?.id, 'night');
+  for (const f of [minimal, symmetric, landscape, silhouette, lowKey]) { const g = suggestGoal(analyze(f({}))); assert.ok(!g || GOAL_BY_ID[g.id]); }
+});
